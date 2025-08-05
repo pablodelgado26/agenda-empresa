@@ -272,9 +272,47 @@ const Page = () => {
     const descricao = selectedClient.desc || 'Nenhuma descrição disponível';
     const splitText = doc.splitTextToSize(descricao, 170);
     doc.text(splitText, 20, yPosition);
+    yPosition += splitText.length * 5 + 15;
+    
+    // Adicionar fotos se existirem
+    if (selectedClient.fotoAntes || selectedClient.fotoDepois) {
+      doc.setFontSize(14);
+      doc.text('Fotos:', 20, yPosition);
+      yPosition += 10;
+      
+      const photoWidth = 70;
+      const photoHeight = 70;
+      let xPosition = 20;
+      
+      // Foto Antes
+      if (selectedClient.fotoAntes) {
+        doc.setFontSize(12);
+        doc.text('Antes:', xPosition, yPosition);
+        try {
+          doc.addImage(selectedClient.fotoAntes, 'JPEG', xPosition, yPosition + 5, photoWidth, photoHeight);
+        } catch (error) {
+          console.warn('Erro ao adicionar foto "Antes" ao PDF:', error);
+          doc.text('Erro ao carregar foto', xPosition, yPosition + 35);
+        }
+        xPosition += photoWidth + 20;
+      }
+      
+      // Foto Depois
+      if (selectedClient.fotoDepois) {
+        doc.setFontSize(12);
+        doc.text('Depois:', xPosition, yPosition);
+        try {
+          doc.addImage(selectedClient.fotoDepois, 'JPEG', xPosition, yPosition + 5, photoWidth, photoHeight);
+        } catch (error) {
+          console.warn('Erro ao adicionar foto "Depois" ao PDF:', error);
+          doc.text('Erro ao carregar foto', xPosition, yPosition + 35);
+        }
+      }
+      
+      yPosition += photoHeight + 20;
+    }
     
     // Data de geração do relatório
-    yPosition += splitText.length * 5 + 20;
     doc.setFontSize(10);
     doc.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, yPosition);
     
