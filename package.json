@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "date-fns": "^4.1.0",
+    "jspdf": "^3.0.1",
     "next": "15.4.5",
     "react": "19.1.0",
     "react-big-calendar": "^1.19.4",

@@ -7,7 +7,9 @@ import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import style from './page.module.css';
 import ptBR from 'date-fns/locale/pt-BR';
+import jsPDF from 'jspdf';
 
 const locales = { 'pt-BR': ptBR };
 
@@ -192,6 +194,61 @@ const Page = () => {
     setNextAppointment('');
   };
 
+  const handleDownloadPDF = () => {
+    if (!selectedClient) return;
+
+    const doc = new jsPDF();
+    
+    // Título do documento
+    doc.setFontSize(20);
+    doc.text('Detalhes do Cliente', 20, 20);
+    
+    // Linha separadora
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, 190, 25);
+    
+    // Informações do cliente
+    doc.setFontSize(12);
+    let yPosition = 40;
+    
+    doc.text(`Nome: ${selectedClient.title || 'Não informado'}`, 20, yPosition);
+    yPosition += 10;
+    
+    doc.text(`E-mail: ${selectedClient.email || 'Não informado'}`, 20, yPosition);
+    yPosition += 10;
+    
+    doc.text(`Endereço: ${selectedClient.endereco || 'Não informado'}`, 20, yPosition);
+    yPosition += 10;
+    
+    doc.text(`CPF: ${selectedClient.cpf || 'Não informado'}`, 20, yPosition);
+    yPosition += 10;
+    
+    doc.text(`Data de Aniversário: ${selectedClient.aniversario || 'Não informado'}`, 20, yPosition);
+    yPosition += 10;
+    
+    const proximoAgendamento = selectedClient.nextAppointment 
+      ? new Date(selectedClient.nextAppointment).toLocaleDateString('pt-BR')
+      : 'Não informado';
+    doc.text(`Próximo Agendamento: ${proximoAgendamento}`, 20, yPosition);
+    yPosition += 15;
+    
+    // Descrição com quebra de linha
+    doc.text('Descrição:', 20, yPosition);
+    yPosition += 10;
+    
+    const descricao = selectedClient.desc || 'Nenhuma descrição disponível';
+    const splitText = doc.splitTextToSize(descricao, 170);
+    doc.text(splitText, 20, yPosition);
+    
+    // Data de geração do relatório
+    yPosition += splitText.length * 5 + 20;
+    doc.setFontSize(10);
+    doc.text(`Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, yPosition);
+    
+    // Download do PDF
+    doc.save(`cliente_${selectedClient.title.replace(/\s+/g, '_')}.pdf`);
+  };
+
   const eventsForSelectedDate = events.filter(
     (e) => new Date(e.start).toDateString() === selectedDate?.toDateString()
   );
@@ -204,17 +261,17 @@ const Page = () => {
   );
 
   return (
-    <main className="p-6">
-      <nav className="mb-6 flex gap-4 justify-center">
+    <main className={style.mainContainer}>
+      <nav className={style.navContainer}>
         <button
           onClick={() => setView('agenda')}
-          className={`px-4 py-2 rounded ${view === 'agenda' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`${style.navButton} ${view === 'agenda' ? style.navButtonActive : style.navButtonInactive}`}
         >
           Agenda
         </button>
         <button
           onClick={() => setView('clientes')}
-          className={`px-4 py-2 rounded ${view === 'clientes' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          className={`${style.navButton} ${view === 'clientes' ? style.navButtonActive : style.navButtonInactive}`}
         >
           Meus Clientes
         </button>
@@ -229,7 +286,7 @@ const Page = () => {
           defaultView="month"
           startAccessor="start"
           endAccessor="end"
-          style={{ height: '80vh' }}
+          className={style.calendarContainer}
           onSelectSlot={handleSelectSlot}
           onSelectEvent={(event) => {
             setSelectedClient(event);
@@ -258,25 +315,25 @@ const Page = () => {
       )}
 
       {view === 'clientes' && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold mb-2">Meus Clientes</h2>
+        <div className={style.clientsContainer}>
+          <h2 className={style.clientsTitle}>Meus Clientes</h2>
           {uniqueClients.map((client, idx) => (
             <div
               key={idx}
-              className="border p-4 rounded cursor-pointer hover:bg-gray-100"
+              className={style.clientCard}
               onClick={() => setSelectedClient(client)}
             >
-              <p className="font-semibold">{client.title}</p>
-              <p className="text-sm text-gray-500">{client.email}</p>
+              <p className={style.clientName}>{client.title}</p>
+              <p className={style.clientEmail}>{client.email}</p>
             </div>
           ))}
         </div>
       )}
 
       {selectedClient && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
-            <h3 className="text-xl font-bold mb-4">Detalhes do Cliente</h3>
+        <div className={style.modalOverlay}>
+          <div className={style.clientModal}>
+            <h3 className={style.clientModalTitle}>Detalhes do Cliente</h3>
             <p><strong>Nome:</strong> {selectedClient.title}</p>
             <p><strong>E-mail:</strong> {selectedClient.email}</p>
             <p><strong>Endereço:</strong> {selectedClient.endereco}</p>
@@ -289,22 +346,28 @@ const Page = () => {
                 : 'Não informado'}
             </p>
             <p><strong>Descrição:</strong> {selectedClient.desc}</p>
-            <div className="flex gap-4 mt-4">
+            <div className={style.clientModalButtons}>
               <button
                 onClick={handleEditClient}
-                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+                className={style.editButton}
               >
                 Editar
               </button>
               <button
+                onClick={handleDownloadPDF}
+                className={style.downloadButton}
+              >
+                Baixar PDF
+              </button>
+              <button
                 onClick={handleDeleteClient}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                className={style.deleteButton}
               >
                 Deletar
               </button>
               <button
                 onClick={() => setSelectedClient(null)}
-                className="text-blue-600 underline"
+                className={style.closeLink}
               >
                 Fechar
               </button>
@@ -314,9 +377,9 @@ const Page = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-xl">
-            <h2 className="text-2xl font-semibold mb-4">
+        <div className={style.modalOverlay}>
+          <div className={style.mainModal}>
+            <h2 className={style.mainModalTitle}>
               {modalMode === 'view'
                 ? `Registros para ${selectedDate?.toLocaleDateString('pt-BR')}`
                 : modalMode === 'edit'
@@ -324,68 +387,68 @@ const Page = () => {
                 : 'Novo Registro'}
             </h2>
             {modalMode === 'view' ? (
-              <div className="space-y-2">
+              <div className={style.viewSection}>
                 {eventsForSelectedDate.length > 0 ? (
                   eventsForSelectedDate.map((event, idx) => (
-                    <div key={idx} className="border p-3 rounded bg-gray-100">
+                    <div key={idx} className={style.eventCard}>
                       <p><strong>Cliente:</strong> {event.title}</p>
                       <p><strong>Descrição:</strong> {event.desc || 'Sem descrição'}</p>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500">Nenhum registro para este dia.</p>
+                  <p className={style.noEventsText}>Nenhum registro para este dia.</p>
                 )}
                 <button
                   onClick={() => setModalMode('create')}
-                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  className={style.newRecordButton}
                 >
                   Fazer novo registro
                 </button>
               </div>
             ) : modalMode === 'edit' ? (
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <input name="nome" value={formData.nome} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Nome do Cliente" />
-                <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Endereço" />
-                <input name="email" value={formData.email} onChange={handleInputChange} type="email" className="w-full p-2 border rounded" placeholder="E-mail" />
-                <label className="block mb-2">
+              <form className={style.formContainer} onSubmit={(e) => e.preventDefault()}>
+                <input name="nome" value={formData.nome} onChange={handleInputChange} className={style.formInput} placeholder="Nome do Cliente" />
+                <input name="endereco" value={formData.endereco} onChange={handleInputChange} className={style.formInput} placeholder="Endereço" />
+                <input name="email" value={formData.email} onChange={handleInputChange} type="email" className={style.formInput} placeholder="E-mail" />
+                <label className={style.dateLabel}>
                   Data de Aniversário:
-                  <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className="w-full p-2 border rounded" />
+                  <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className={style.dateInput} />
                 </label>
-                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
-                <label className="block mb-2">
+                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
+                <label className={style.dateLabel}>
                   Próximo agendamento:
-                  <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+                  <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />
                 </label>
-                <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Descrição do serviço" />
-                <div className="flex gap-4">
-                  <button type="button" onClick={handleUpdateClient} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
+                <div className={style.formButtons}>
+                  <button type="button" onClick={handleUpdateClient} className={style.saveButton}>
                     Salvar alterações
                   </button>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-600 underline">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className={style.cancelButton}>
                     Cancelar
                   </button>
                 </div>
               </form>
             ) : (
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <input name="nome" value={formData.nome} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Nome do Cliente" />
-                <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Endereço" />
-                <input name="email" value={formData.email} onChange={handleInputChange} type="email" className="w-full p-2 border rounded" placeholder="E-mail" />
-                <label className="block mb-2">
+              <form className={style.formContainer} onSubmit={(e) => e.preventDefault()}>
+                <input name="nome" value={formData.nome} onChange={handleInputChange} className={style.formInput} placeholder="Nome do Cliente" />
+                <input name="endereco" value={formData.endereco} onChange={handleInputChange} className={style.formInput} placeholder="Endereço" />
+                <input name="email" value={formData.email} onChange={handleInputChange} type="email" className={style.formInput} placeholder="E-mail" />
+                <label className={style.dateLabel}>
                   Data de Aniversário:
-                  <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className="w-full p-2 border rounded" />
+                  <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className={style.dateInput} />
                 </label>
-                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
-                <label className="block mb-2">
+                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
+                <label className={style.dateLabel}>
                   Próximo agendamento:
-                  <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+                  <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />
                 </label>
-                <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className="w-full p-2 border rounded" placeholder="Descrição do serviço" />
-                <div className="flex gap-4">
-                  <button type="button" onClick={handleSaveEvent} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
+                <div className={style.formButtons}>
+                  <button type="button" onClick={handleSaveEvent} className={style.saveButton}>
                     Salvar
                   </button>
-                  <button type="button" onClick={() => setModalMode('view')} className="text-gray-600 underline">
+                  <button type="button" onClick={() => setModalMode('view')} className={style.cancelButton}>
                     Cancelar
                   </button>
                 </div>
@@ -407,7 +470,7 @@ const Page = () => {
                 });
                 setNextAppointment('');
               }}
-              className="mt-6 text-red-500 hover:underline block"
+              className={style.closeButton}
             >
               Fechar
             </button>
