@@ -27,6 +27,78 @@
 /* Calendário */
 .calendarContainer {
   height: 80vh;
+  touch-action: manipulation;
+}
+
+/* Media queries para mobile */
+@media (max-width: 768px) {
+  .mainContainer {
+    padding: 1rem;
+  }
+  
+  .calendarContainer {
+    height: 70vh;
+    touch-action: manipulation;
+  }
+  
+  /* Melhora o toque nos elementos do calendário */
+  .calendarContainer .rbc-month-view {
+    touch-action: manipulation;
+  }
+  
+  .calendarContainer .rbc-date-cell {
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+  
+  .calendarContainer .rbc-date-cell button {
+    min-height: 40px;
+    width: 100%;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .calendarContainer .rbc-button-link {
+    padding: 8px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+  
+  /* Melhora a área de toque dos botões de navegação */
+  .navButton {
+    padding: 0.75rem 1.5rem;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Melhora o layout das fotos no mobile */
+  .photoRow {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .clientModalButtons {
+    flex-direction: column;
+  }
+  
+  .formButtons {
+    flex-direction: column;
+  }
+  
+  /* Melhora o modal da câmera no mobile */
+  .cameraModal {
+    margin: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .cameraVideo {
+    max-height: 60vh;
+  }
 }
 
 /* Seção de clientes */
@@ -47,6 +119,9 @@
   padding: 1rem;
   border-radius: 0.375rem;
   cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
 }
 
 .clientCard:hover {
@@ -74,6 +149,8 @@
   align-items: center;
   justify-content: center;
   z-index: 50;
+  padding: 1rem;
+  overflow-y: auto;
 }
 
 /* Modal de detalhes do cliente */
@@ -84,6 +161,8 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 90%;
   max-width: 28rem;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .clientModalTitle {
@@ -96,13 +175,21 @@
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .editButton {
   background-color: #eab308;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .editButton:hover {
@@ -112,8 +199,15 @@
 .downloadButton {
   background-color: #059669;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .downloadButton:hover {
@@ -123,8 +217,15 @@
 .deleteButton {
   background-color: #dc2626;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .deleteButton:hover {
@@ -134,6 +235,15 @@
 .closeLink {
   color: #2563eb;
   text-decoration: underline;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 /* Modal principal */
@@ -144,6 +254,8 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 90%;
   max-width: 36rem;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .mainModalTitle {
@@ -174,8 +286,14 @@
   margin-top: 1rem;
   background-color: #2563eb;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  width: 100%;
 }
 
 .newRecordButton:hover {
@@ -191,9 +309,12 @@
 
 .formInput {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  font-size: 16px; /* Evita zoom no iOS */
 }
 
 .formLabel {
@@ -203,21 +324,32 @@
 
 .formTextarea {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
+  min-height: 80px;
+  touch-action: manipulation;
+  font-size: 16px; /* Evita zoom no iOS */
 }
 
 .formButtons {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .saveButton {
   background-color: #16a34a;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .saveButton:hover {
@@ -227,6 +359,15 @@
 .cancelButton {
   color: #6b7280;
   text-decoration: underline;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
 }
 
 .closeButton {
@@ -234,6 +375,14 @@
   color: #ef4444;
   text-decoration: underline;
   display: block;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
 }
 
 .closeButton:hover {
@@ -243,9 +392,12 @@
 /* Estilos específicos para CPF */
 .cpfInput {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
+  min-height: 44px;
+  touch-action: manipulation;
+  font-size: 16px; /* Evita zoom no iOS */
 }
 
 /* Estilos para labels com input de data */
@@ -256,8 +408,193 @@
 
 .dateInput {
   margin-top: 0.25rem;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   width: 100%;
+  min-height: 44px;
+  touch-action: manipulation;
+  font-size: 16px; /* Evita zoom no iOS */
+}
+
+/* Estilos para fotos */
+.photosSection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.photosContainer {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.photoItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.photoLabel {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.photo {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 2px solid #d1d5db;
+}
+
+/* Estilos para formulário de fotos */
+.photosFormSection {
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  background-color: #f9fafb;
+}
+
+.photosFormSection h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.photoRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.photoColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.photoColumn label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.photoPreview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.photoThumbnail {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 2px solid #d1d5db;
+}
+
+.cameraButton {
+  background-color: #0ea5e9;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.cameraButton:hover {
+  background-color: #0284c7;
+}
+
+.removePhotoButton {
+  background-color: #ef4444;
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  min-height: 36px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+.removePhotoButton:hover {
+  background-color: #dc2626;
+}
+
+/* Modal da câmera */
+.cameraModal {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 90%;
+  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cameraTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cameraVideo {
+  width: 100%;
+  max-width: 400px;
+  height: 300px;
+  border-radius: 0.5rem;
+  border: 2px solid #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.cameraButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.captureButton {
+  background-color: #16a34a;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  flex: 1;
+}
+
+.captureButton:hover {
+  background-color: #15803d;
+}
+
+.cancelCameraButton {
+  background-color: #6b7280;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  flex: 1;
+}
+
+.cancelCameraButton:hover {
+  background-color: #4b5563;
 }

@@ -36,8 +36,13 @@ const Page = () => {
     aniversario: '',
     cpf: '',
     nextAppointment: '',
+    fotoAntes: '',
+    fotoDepois: '',
   });
   const [selectedClient, setSelectedClient] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraMode, setCameraMode] = useState(''); // 'antes' ou 'depois'
+  const [stream, setStream] = useState(null);
 
   useEffect(() => {
     const hoje = new Date();
@@ -59,10 +64,28 @@ const Page = () => {
     }
   }, [events]);
 
+  // Melhora a experiência de toque no mobile
+  useEffect(() => {
+    const preventZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventZoom);
+    };
+  }, []);
+
   const handleSelectSlot = ({ start }) => {
-    setSelectedDate(start);
-    setModalMode('view');
-    setIsModalOpen(true);
+    // Pequeno delay para garantir que o toque seja registrado corretamente no mobile
+    setTimeout(() => {
+      setSelectedDate(start);
+      setModalMode('view');
+      setIsModalOpen(true);
+    }, 50);
   };
 
   const formatCPF = (value) => {
@@ -100,6 +123,8 @@ const Page = () => {
       email: formData.email,
       aniversario: formData.aniversario,
       cpf: formData.cpf,
+      fotoAntes: formData.fotoAntes,
+      fotoDepois: formData.fotoDepois,
       nextAppointment: nextAppointment || null,
     };
 
@@ -132,6 +157,8 @@ const Page = () => {
       email: '',
       aniversario: '',
       cpf: '',
+      fotoAntes: '',
+      fotoDepois: '',
       nextAppointment: '',
     });
     setNextAppointment('');
@@ -153,6 +180,8 @@ const Page = () => {
       email: selectedClient.email || '',
       aniversario: selectedClient.aniversario || '',
       cpf: selectedClient.cpf || '',
+      fotoAntes: selectedClient.fotoAntes || '',
+      fotoDepois: selectedClient.fotoDepois || '',
       nextAppointment: selectedClient.nextAppointment || '',
     });
     setNextAppointment(selectedClient.nextAppointment || '');
@@ -174,6 +203,8 @@ const Page = () => {
               email: formData.email,
               aniversario: formData.aniversario,
               cpf: formData.cpf,
+              fotoAntes: formData.fotoAntes,
+              fotoDepois: formData.fotoDepois,
               nextAppointment: nextAppointment || null,
             }
           : e
@@ -189,6 +220,8 @@ const Page = () => {
       email: '',
       aniversario: '',
       cpf: '',
+      fotoAntes: '',
+      fotoDepois: '',
       nextAppointment: '',
     });
     setNextAppointment('');
@@ -247,6 +280,58 @@ const Page = () => {
     
     // Download do PDF
     doc.save(`cliente_${selectedClient.title.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  const openCamera = async (mode) => {
+    setCameraMode(mode);
+    setIsCameraOpen(true);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      setStream(mediaStream);
+    } catch (error) {
+      console.error('Erro ao acessar a câmera:', error);
+      alert('Não foi possível acessar a câmera. Verifique as permissões.');
+      setIsCameraOpen(false);
+    }
+  };
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraOpen(false);
+    setCameraMode('');
+  };
+
+  const takePhoto = () => {
+    const video = document.getElementById('camera-video');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+    
+    const photoData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    if (cameraMode === 'antes') {
+      setFormData(prev => ({ ...prev, fotoAntes: photoData }));
+    } else if (cameraMode === 'depois') {
+      setFormData(prev => ({ ...prev, fotoDepois: photoData }));
+    }
+    
+    closeCamera();
+  };
+
+  const removePhoto = (type) => {
+    if (type === 'antes') {
+      setFormData(prev => ({ ...prev, fotoAntes: '' }));
+    } else if (type === 'depois') {
+      setFormData(prev => ({ ...prev, fotoDepois: '' }));
+    }
   };
 
   const eventsForSelectedDate = events.filter(
@@ -346,6 +431,27 @@ const Page = () => {
                 : 'Não informado'}
             </p>
             <p><strong>Descrição:</strong> {selectedClient.desc}</p>
+            
+            {(selectedClient.fotoAntes || selectedClient.fotoDepois) && (
+              <div className={style.photosSection}>
+                <h4><strong>Fotos:</strong></h4>
+                <div className={style.photosContainer}>
+                  {selectedClient.fotoAntes && (
+                    <div className={style.photoItem}>
+                      <p className={style.photoLabel}>Antes:</p>
+                      <img src={selectedClient.fotoAntes} alt="Foto Antes" className={style.photo} />
+                    </div>
+                  )}
+                  {selectedClient.fotoDepois && (
+                    <div className={style.photoItem}>
+                      <p className={style.photoLabel}>Depois:</p>
+                      <img src={selectedClient.fotoDepois} alt="Foto Depois" className={style.photo} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className={style.clientModalButtons}>
               <button
                 onClick={handleEditClient}
@@ -419,6 +525,43 @@ const Page = () => {
                   Próximo agendamento:
                   <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />
                 </label>
+                
+                <div className={style.photosFormSection}>
+                  <h4>Fotos do Cliente:</h4>
+                  <div className={style.photoRow}>
+                    <div className={style.photoColumn}>
+                      <label>Foto Antes:</label>
+                      {formData.fotoAntes ? (
+                        <div className={style.photoPreview}>
+                          <img src={formData.fotoAntes} alt="Antes" className={style.photoThumbnail} />
+                          <button type="button" onClick={() => removePhoto('antes')} className={style.removePhotoButton}>
+                            Remover
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
+                          📷 Tirar Foto Antes
+                        </button>
+                      )}
+                    </div>
+                    <div className={style.photoColumn}>
+                      <label>Foto Depois:</label>
+                      {formData.fotoDepois ? (
+                        <div className={style.photoPreview}>
+                          <img src={formData.fotoDepois} alt="Depois" className={style.photoThumbnail} />
+                          <button type="button" onClick={() => removePhoto('depois')} className={style.removePhotoButton}>
+                            Remover
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
+                          📷 Tirar Foto Depois
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
                 <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
                 <div className={style.formButtons}>
                   <button type="button" onClick={handleUpdateClient} className={style.saveButton}>
@@ -443,6 +586,43 @@ const Page = () => {
                   Próximo agendamento:
                   <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />
                 </label>
+                
+                <div className={style.photosFormSection}>
+                  <h4>Fotos do Cliente:</h4>
+                  <div className={style.photoRow}>
+                    <div className={style.photoColumn}>
+                      <label>Foto Antes:</label>
+                      {formData.fotoAntes ? (
+                        <div className={style.photoPreview}>
+                          <img src={formData.fotoAntes} alt="Antes" className={style.photoThumbnail} />
+                          <button type="button" onClick={() => removePhoto('antes')} className={style.removePhotoButton}>
+                            Remover
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
+                          📷 Tirar Foto Antes
+                        </button>
+                      )}
+                    </div>
+                    <div className={style.photoColumn}>
+                      <label>Foto Depois:</label>
+                      {formData.fotoDepois ? (
+                        <div className={style.photoPreview}>
+                          <img src={formData.fotoDepois} alt="Depois" className={style.photoThumbnail} />
+                          <button type="button" onClick={() => removePhoto('depois')} className={style.removePhotoButton}>
+                            Remover
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
+                          📷 Tirar Foto Depois
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
                 <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
                 <div className={style.formButtons}>
                   <button type="button" onClick={handleSaveEvent} className={style.saveButton}>
@@ -466,6 +646,8 @@ const Page = () => {
                   email: '',
                   aniversario: '',
                   cpf: '',
+                  fotoAntes: '',
+                  fotoDepois: '',
                   nextAppointment: '',
                 });
                 setNextAppointment('');
@@ -474,6 +656,35 @@ const Page = () => {
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+
+      {isCameraOpen && (
+        <div className={style.modalOverlay}>
+          <div className={style.cameraModal}>
+            <h3 className={style.cameraTitle}>
+              Tirar Foto {cameraMode === 'antes' ? 'Antes' : 'Depois'}
+            </h3>
+            <video 
+              id="camera-video" 
+              autoPlay 
+              playsInline 
+              className={style.cameraVideo}
+              ref={(video) => {
+                if (video && stream) {
+                  video.srcObject = stream;
+                }
+              }}
+            />
+            <div className={style.cameraButtons}>
+              <button onClick={takePhoto} className={style.captureButton}>
+                📷 Capturar
+              </button>
+              <button onClick={closeCamera} className={style.cancelCameraButton}>
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
