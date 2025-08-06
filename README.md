@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 📅 Sistema de Agenda para Empresas
 
-## Getting Started
+Sistema completo de gerenciamento de clientes e agendamentos desenvolvido em Next.js.
 
-First, run the development server:
+## 🚀 Funcionalidades
+
+### 📋 Gestão de Clientes
+- **Cadastro completo** com dados pessoais
+- **CPF automático** com máscara (000.000.000-00)
+- **Validação de email** para notificações
+- **Upload de fotos** (antes e depois)
+- **Edição e exclusão** de registros
+
+### 📅 Sistema de Agendamentos
+- **Calendário interativo** em português
+- **Visualização mensal** com navegação
+- **Agendamentos futuros** automáticos
+- **Lembretes visuais** na interface
+
+### 📧 Notificações Automáticas
+- **Email automático** 5 dias antes do agendamento
+- **Notificação para cliente** com detalhes do serviço
+- **Notificação para empresa** com dados completos
+- **Template HTML** responsivo e profissional
+
+### 📄 Relatórios
+- **Download em PDF** com todos os dados
+- **Fotos incluídas** no relatório
+- **Layout profissional** com cabeçalho e rodapé
+
+### 📱 Mobile-First
+- **Responsivo** para todos os dispositivos
+- **Touch-friendly** com área de toque otimizada
+- **Câmera integrada** para captura de fotos
+- **Interface otimizada** para celular
+
+## 🛠️ Tecnologias
+
+- **Next.js 15** - Framework React
+- **React Big Calendar** - Componente de calendário
+- **EmailJS** - Envio de emails frontend
+- **jsPDF** - Geração de relatórios PDF
+- **CSS Modules** - Estilização modular
+- **date-fns** - Manipulação de datas
+
+## 📦 Instalação
 
 ```bash
+# Clonar repositório
+git clone [URL_DO_REPOSITORIO]
+
+# Instalar dependências
+npm install
+
+# Executar em desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build para produção
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚙️ Configuração
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### EmailJS (Notificações)
+1. Criar conta em https://emailjs.com
+2. Configurar serviço de email
+3. Criar template HTML
+4. Atualizar as credenciais no código:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```javascript
+const EMAILJS_SERVICE_ID = 'seu_service_id';
+const EMAILJS_TEMPLATE_ID = 'seu_template_id';
+const EMAILJS_PUBLIC_KEY = 'sua_public_key';
+const EMAIL_EMPRESA = 'email@empresa.com';
+```
 
-## Learn More
+## 📱 Como Usar
 
-To learn more about Next.js, take a look at the following resources:
+1. **Criar Cliente**: Clique em uma data → "Fazer novo registro"
+2. **Gerenciar**: Vá em "Meus Clientes" para editar/excluir
+3. **Fotos**: Use a câmera para capturar antes/depois
+4. **PDF**: Clique "Baixar PDF" nos detalhes do cliente
+5. **Notificações**: Automáticas 5 dias antes do agendamento
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔧 Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev      # Desenvolvimento
+npm run build    # Build produção
+npm start        # Servidor produção
+npm run lint     # Verificar código
+```
 
-## Deploy on Vercel
+## 📝 Licença
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Este projeto está sob licença MIT.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+**Desenvolvido com ❤️ para facilitar o gerenciamento de clientes e agendamentos**

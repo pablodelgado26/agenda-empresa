@@ -10,6 +10,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import style from './page.module.css';
 import ptBR from 'date-fns/locale/pt-BR';
 import jsPDF from 'jspdf';
+import emailjs from '@emailjs/browser';
 
 const locales = { 'pt-BR': ptBR };
 
@@ -20,6 +21,14 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
+
+// Configuração do EmailJS - SUBSTITUA PELOS SEUS IDs
+const EMAILJS_SERVICE_ID = 'service_flukyy6'; // Substitua pelo seu Service ID
+const EMAILJS_TEMPLATE_ID = 'template_ny3weod'; // Substitua pelo seu Template ID
+const EMAILJS_PUBLIC_KEY = 'cu1qq5jEzvnY76lkm'; // Substitua pela sua Public Key
+
+// Email da empresa
+const EMAIL_EMPRESA = 'pablo.j.abreu@aluno.senai.br'; // Substitua pelo email da empresa
 
 const Page = () => {
   const [view, setView] = useState('agenda');
@@ -44,6 +53,58 @@ const Page = () => {
   const [cameraMode, setCameraMode] = useState(''); // 'antes' ou 'depois'
   const [stream, setStream] = useState(null);
 
+  // Inicializar EmailJS
+  useEffect(() => {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }, []);
+
+  // Função para enviar email de lembrete
+  const enviarEmailLembrete = async (cliente, diasRestantes) => {
+    const dataAgendamento = new Date(cliente.nextAppointment).toLocaleDateString('pt-BR');
+    
+    const templateParams = {
+      nome_cliente: cliente.title,
+      email_cliente: cliente.email || 'Não informado',
+      email_empresa: EMAIL_EMPRESA,
+      data_agendamento: dataAgendamento,
+      dias_restantes: diasRestantes,
+      endereco_cliente: cliente.endereco || 'Não informado',
+      cpf_cliente: cliente.cpf || 'Não informado',
+      descricao_servico: cliente.desc || 'Serviço não especificado'
+    };
+
+    try {
+      // Enviar email para o cliente (só se tiver email)
+      if (cliente.email && cliente.email.trim() !== '') {
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            ...templateParams,
+            to_email: cliente.email,
+            tipo_destinatario: 'cliente'
+          }
+        );
+        console.log('✅ Email enviado para o cliente:', cliente.email);
+      }
+
+      // Enviar email para a empresa
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          ...templateParams,
+          to_email: EMAIL_EMPRESA,
+          tipo_destinatario: 'empresa'
+        }
+      );
+      console.log('✅ Email enviado para a empresa:', EMAIL_EMPRESA);
+      
+    } catch (error) {
+      console.error('❌ Erro ao enviar email:', error);
+    }
+  };
+
   useEffect(() => {
     const hoje = new Date();
     const cincoDiasDepois = new Date();
@@ -58,8 +119,16 @@ const Page = () => {
     });
 
     if (eventosEmCincoDias.length > 0) {
-      eventosEmCincoDias.forEach((evento) => {
+      eventosEmCincoDias.forEach(async (evento) => {
+        // Mostrar alerta
         alert(`📅 Lembrete: o cliente ${evento.title} tem um agendamento em 5 dias!`);
+        
+        // Enviar email de lembrete
+        try {
+          await enviarEmailLembrete(evento, 5);
+        } catch (error) {
+          console.error('Falha ao enviar email de lembrete:', error);
+        }
       });
     }
   }, [events]);
