@@ -11,6 +11,8 @@ import style from './page.module.css';
 import ptBR from 'date-fns/locale/pt-BR';
 import jsPDF from 'jspdf';
 import emailjs from '@emailjs/browser';
+import { ProtectedRoute, useAuth } from '../context/AuthContext';
+import { clientService } from '../services/clientService';
 
 const locales = { 'pt-BR': ptBR };
 
@@ -31,12 +33,15 @@ const EMAILJS_PUBLIC_KEY = 'cu1qq5jEzvnY76lkm'; // Substitua pela sua Public Key
 const EMAIL_EMPRESA = 'pablo.j.abreu@aluno.senai.br'; // Substitua pelo email da empresa
 
 const Page = () => {
+  const { user, logout } = useAuth();
   const [view, setView] = useState('agenda');
   const [nextAppointment, setNextAppointment] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [events, setEvents] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -56,7 +61,67 @@ const Page = () => {
   // Inicializar EmailJS
   useEffect(() => {
     emailjs.init(EMAILJS_PUBLIC_KEY);
+    loadClients();
   }, []);
+
+  // Carregar clientes da API
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const response = await clientService.getAllClients({ limite: 100 });
+      const clientsData = response.clientes || [];
+      
+      setClients(clientsData);
+      
+      // Converter clientes para eventos do calendário
+      const clientEvents = [];
+      
+      clientsData.forEach(client => {
+        // Evento principal (data de criação com horário fixo)
+        const createdDate = client.createdAt ? new Date(client.createdAt) : new Date();
+        createdDate.setHours(12, 0, 0, 0); // Forçar meio-dia para evitar problemas de fuso
+        
+        const mainEvent = {
+          id: client.id,
+          title: client.name,
+          start: createdDate,
+          end: createdDate,
+          desc: client.descricao || 'Cliente cadastrado',
+          endereco: client.endereco,
+          email: client.email,
+          aniversario: client.dataNascimento,
+          cpf: client.CPF,
+          fotoAntes: client.fotoAntes,
+          fotoDepois: client.fotoDepois,
+          nextAppointment: client.proximoAgendamento,
+          clientData: client
+        };
+        
+        clientEvents.push(mainEvent);
+        
+        // Adicionar próximo agendamento se existir
+        if (client.proximoAgendamento) {
+          const appointmentDate = new Date(client.proximoAgendamento);
+          appointmentDate.setHours(12, 0, 0, 0); // Forçar meio-dia
+          
+          const appointmentEvent = {
+            ...mainEvent,
+            start: appointmentDate,
+            end: appointmentDate,
+            desc: 'Próximo agendamento'
+          };
+          clientEvents.push(appointmentEvent);
+        }
+      });
+      
+      setEvents(clientEvents);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      alert('Erro ao carregar clientes. Verifique sua conexão.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Função para enviar email de lembrete
   const enviarEmailLembrete = async (cliente, diasRestantes) => {
@@ -107,13 +172,19 @@ const Page = () => {
 
   useEffect(() => {
     const hoje = new Date();
-    const cincoDiasDepois = new Date();
+    hoje.setHours(12, 0, 0, 0); // Normalizar horário
+    
+    const cincoDiasDepois = new Date(hoje);
     cincoDiasDepois.setDate(hoje.getDate() + 5);
 
     const eventosEmCincoDias = events.filter((e) => {
       const dataEvento = new Date(e.start);
+      dataEvento.setHours(12, 0, 0, 0); // Normalizar horário
+      
       return (
-        dataEvento.toDateString() === cincoDiasDepois.toDateString() &&
+        dataEvento.getFullYear() === cincoDiasDepois.getFullYear() &&
+        dataEvento.getMonth() === cincoDiasDepois.getMonth() &&
+        dataEvento.getDate() === cincoDiasDepois.getDate() &&
         e.desc === 'Próximo agendamento'
       );
     });
@@ -149,9 +220,13 @@ const Page = () => {
   }, []);
 
   const handleSelectSlot = ({ start }) => {
+    // Corrigir fuso horário - garantir que a data selecionada seja exata
+    const adjustedDate = new Date(start);
+    adjustedDate.setHours(12, 0, 0, 0); // Forçar meio-dia para evitar problemas de fuso
+    
     // Pequeno delay para garantir que o toque seja registrado corretamente no mobile
     setTimeout(() => {
-      setSelectedDate(start);
+      setSelectedDate(adjustedDate);
       setModalMode('view');
       setIsModalOpen(true);
     }, 50);
@@ -177,123 +252,150 @@ const Page = () => {
     }
   };
 
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!formData.nome || !selectedDate) return;
 
-    const ajustada = new Date(selectedDate);
-    ajustada.setHours(12, 0, 0, 0);
+    try {
+      setLoading(true);
+      
+      // Corrigir problema de fuso horário - forçar horário local
+      const adjustedDate = new Date(selectedDate);
+      adjustedDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso
+      
+      // Criar cliente na API
+      const response = await clientService.createClient({
+        nome: formData.nome,
+        email: formData.email,
+        endereco: formData.endereco,
+        aniversario: formData.aniversario,
+        cpf: formData.cpf,
+        descricao: formData.descricao,
+        fotoAntes: formData.fotoAntes,
+        fotoDepois: formData.fotoDepois,
+        nextAppointment: nextAppointment || null
+      });
 
-    const newEvent = {
-      title: formData.nome,
-      start: ajustada,
-      end: ajustada,
-      desc: formData.descricao,
-      endereco: formData.endereco,
-      email: formData.email,
-      aniversario: formData.aniversario,
-      cpf: formData.cpf,
-      fotoAntes: formData.fotoAntes,
-      fotoDepois: formData.fotoDepois,
-      nextAppointment: nextAppointment || null,
-    };
-
-    let agendamentoFuturo = null;
-
-    if (nextAppointment) {
-      const [ano, mes, dia] = nextAppointment.split('-').map(Number);
-      const prox = new Date(ano, mes - 1, dia, 12, 0, 0); // Garantir meio-dia
-
-      const mesmaData = prox.toDateString() === ajustada.toDateString();
-
-      if (!mesmaData) {
-        agendamentoFuturo = {
-          ...newEvent,
-          start: prox,
-          end: prox,
-          desc: 'Próximo agendamento',
-        };
-      }
+      console.log('Cliente criado:', response);
+      
+      // Recarregar lista de clientes
+      await loadClients();
+      
+      // Limpar formulário
+      setFormData({
+        nome: '',
+        descricao: '',
+        endereco: '',
+        email: '',
+        aniversario: '',
+        cpf: '',
+        fotoAntes: '',
+        fotoDepois: '',
+        nextAppointment: '',
+      });
+      setNextAppointment('');
+      setModalMode('view');
+      setIsModalOpen(false);
+      
+      alert('Cliente cadastrado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      alert('Erro ao salvar cliente: ' + (error.error || 'Verifique os dados e tente novamente'));
+    } finally {
+      setLoading(false);
     }
-
-    setEvents((prev) =>
-      agendamentoFuturo ? [...prev, newEvent, agendamentoFuturo] : [...prev, newEvent]
-    );
-
-    setFormData({
-      nome: '',
-      descricao: '',
-      endereco: '',
-      email: '',
-      aniversario: '',
-      cpf: '',
-      fotoAntes: '',
-      fotoDepois: '',
-      nextAppointment: '',
-    });
-    setNextAppointment('');
-    setModalMode('view');
   };
 
-  const handleDeleteClient = () => {
-    if (!selectedClient) return;
-    setEvents((prev) => prev.filter((e) => e.title !== selectedClient.title));
-    setSelectedClient(null);
+  const handleDeleteClient = async () => {
+    if (!selectedClient || !selectedClient.clientData?.id) return;
+
+    if (!confirm('Tem certeza que deseja deletar este cliente?')) return;
+
+    try {
+      setLoading(true);
+      
+      await clientService.deleteClient(selectedClient.clientData.id);
+      
+      // Recarregar lista de clientes
+      await loadClients();
+      
+      setSelectedClient(null);
+      alert('Cliente deletado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar cliente:', error);
+      alert('Erro ao deletar cliente: ' + (error.error || 'Tente novamente'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditClient = () => {
     if (!selectedClient) return;
+    
+    const clientData = selectedClient.clientData || selectedClient;
+    
     setFormData({
       nome: selectedClient.title || '',
       descricao: selectedClient.desc || '',
       endereco: selectedClient.endereco || '',
       email: selectedClient.email || '',
-      aniversario: selectedClient.aniversario || '',
-      cpf: selectedClient.cpf || '',
+      aniversario: clientData.dataNascimento ? clientData.dataNascimento.split('T')[0] : '',
+      cpf: selectedClient.cpf || clientData.CPF || '',
       fotoAntes: selectedClient.fotoAntes || '',
       fotoDepois: selectedClient.fotoDepois || '',
       nextAppointment: selectedClient.nextAppointment || '',
     });
-    setNextAppointment(selectedClient.nextAppointment || '');
+    setNextAppointment(clientData.proximoAgendamento ? clientData.proximoAgendamento.split('T')[0] : '');
     setModalMode('edit');
     setIsModalOpen(true);
   };
 
-  const handleUpdateClient = () => {
-    if (!selectedClient) return;
-    // Atualiza todos os eventos do cliente
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.title === selectedClient.title
-          ? {
-              ...e,
-              title: formData.nome,
-              desc: formData.descricao,
-              endereco: formData.endereco,
-              email: formData.email,
-              aniversario: formData.aniversario,
-              cpf: formData.cpf,
-              fotoAntes: formData.fotoAntes,
-              fotoDepois: formData.fotoDepois,
-              nextAppointment: nextAppointment || null,
-            }
-          : e
-      )
-    );
-    setSelectedClient(null);
-    setIsModalOpen(false);
-    setModalMode('view');
-    setFormData({
-      nome: '',
-      descricao: '',
-      endereco: '',
-      email: '',
-      aniversario: '',
-      cpf: '',
-      fotoAntes: '',
-      fotoDepois: '',
-      nextAppointment: '',
-    });
-    setNextAppointment('');
+  const handleUpdateClient = async () => {
+    if (!selectedClient || !selectedClient.clientData?.id) return;
+
+    try {
+      setLoading(true);
+      
+      // Atualizar cliente na API
+      const response = await clientService.updateClient(selectedClient.clientData.id, {
+        nome: formData.nome,
+        email: formData.email,
+        endereco: formData.endereco,
+        aniversario: formData.aniversario,
+        cpf: formData.cpf,
+        descricao: formData.descricao,
+        fotoAntes: formData.fotoAntes,
+        fotoDepois: formData.fotoDepois,
+        nextAppointment: nextAppointment || null
+      });
+
+      console.log('Cliente atualizado:', response);
+      
+      // Recarregar lista de clientes
+      await loadClients();
+      
+      setSelectedClient(null);
+      setIsModalOpen(false);
+      setModalMode('view');
+      setFormData({
+        nome: '',
+        descricao: '',
+        endereco: '',
+        email: '',
+        aniversario: '',
+        cpf: '',
+        fotoAntes: '',
+        fotoDepois: '',
+        nextAppointment: '',
+      });
+      setNextAppointment('');
+      
+      alert('Cliente atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar cliente:', error);
+      alert('Erro ao atualizar cliente: ' + (error.error || 'Tente novamente'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -441,33 +543,52 @@ const Page = () => {
     }
   };
 
-  const eventsForSelectedDate = events.filter(
-    (e) => new Date(e.start).toDateString() === selectedDate?.toDateString()
-  );
+  const eventsForSelectedDate = events.filter((e) => {
+    if (!selectedDate) return false;
+    
+    const eventDate = new Date(e.start);
+    const selectedDateOnly = new Date(selectedDate);
+    
+    // Comparar apenas ano, mês e dia (ignorar horário)
+    return (
+      eventDate.getFullYear() === selectedDateOnly.getFullYear() &&
+      eventDate.getMonth() === selectedDateOnly.getMonth() &&
+      eventDate.getDate() === selectedDateOnly.getDate()
+    );
+  });
 
-  const uniqueClients = Object.values(
-    events.reduce((acc, curr) => {
-      if (!acc[curr.title]) acc[curr.title] = curr;
-      return acc;
-    }, {})
-  );
+  // Usar diretamente a lista de clientes da API
+  const uniqueClients = clients;
 
   return (
-    <main className={style.mainContainer}>
-      <nav className={style.navContainer}>
-        <button
-          onClick={() => setView('agenda')}
-          className={`${style.navButton} ${view === 'agenda' ? style.navButtonActive : style.navButtonInactive}`}
-        >
-          Agenda
-        </button>
-        <button
-          onClick={() => setView('clientes')}
-          className={`${style.navButton} ${view === 'clientes' ? style.navButtonActive : style.navButtonInactive}`}
-        >
-          Meus Clientes
-        </button>
-      </nav>
+    <ProtectedRoute>
+      <main className={style.mainContainer}>
+        <nav className={style.navContainer}>
+          <button
+            onClick={() => setView('agenda')}
+            className={`${style.navButton} ${view === 'agenda' ? style.navButtonActive : style.navButtonInactive}`}
+          >
+            Agenda
+          </button>
+          <button
+            onClick={() => setView('clientes')}
+            className={`${style.navButton} ${view === 'clientes' ? style.navButtonActive : style.navButtonInactive}`}
+          >
+            Meus Clientes
+          </button>
+          
+          <div className={style.userSection}>
+            <span className={style.welcomeText}>
+              Olá, {user?.name || user?.email}
+            </span>
+            <button
+              onClick={logout}
+              className={style.logoutButton}
+            >
+              Sair
+            </button>
+          </div>
+        </nav>
 
       {view === 'agenda' && (
         <Calendar
@@ -509,16 +630,45 @@ const Page = () => {
       {view === 'clientes' && (
         <div className={style.clientsContainer}>
           <h2 className={style.clientsTitle}>Meus Clientes</h2>
-          {uniqueClients.map((client, idx) => (
-            <div
-              key={idx}
-              className={style.clientCard}
-              onClick={() => setSelectedClient(client)}
-            >
-              <p className={style.clientName}>{client.title}</p>
-              <p className={style.clientEmail}>{client.email}</p>
+          {loading ? (
+            <div className={style.loadingMessage}>Carregando clientes...</div>
+          ) : uniqueClients.length > 0 ? (
+            uniqueClients.map((client, idx) => (
+              <div
+                key={client.id || idx}
+                className={style.clientCard}
+                onClick={() => {
+                  // Criar objeto compatível com o formato esperado
+                  const clientEvent = {
+                    id: client.id,
+                    title: client.name,
+                    desc: client.descricao,
+                    endereco: client.endereco,
+                    email: client.email,
+                    aniversario: client.dataNascimento,
+                    cpf: client.CPF,
+                    fotoAntes: client.fotoAntes,
+                    fotoDepois: client.fotoDepois,
+                    nextAppointment: client.proximoAgendamento,
+                    clientData: client
+                  };
+                  setSelectedClient(clientEvent);
+                }}
+              >
+                <p className={style.clientName}>{client.name}</p>
+                <p className={style.clientEmail}>{client.email}</p>
+                {client.proximoAgendamento && (
+                  <p className={style.clientAppointment}>
+                    Próximo agendamento: {new Date(client.proximoAgendamento).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className={style.noClientsMessage}>
+              Nenhum cliente cadastrado ainda.
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -529,7 +679,11 @@ const Page = () => {
             <p><strong>Nome:</strong> {selectedClient.title}</p>
             <p><strong>E-mail:</strong> {selectedClient.email}</p>
             <p><strong>Endereço:</strong> {selectedClient.endereco}</p>
-            <p><strong>Data de Aniversário:</strong> {selectedClient.aniversario}</p>
+            <p><strong>Data de Aniversário:</strong> {
+              selectedClient.aniversario ? 
+              new Date(selectedClient.aniversario).toLocaleDateString('pt-BR') : 
+              'Não informado'
+            }</p>
             <p><strong>CPF:</strong> {selectedClient.cpf}</p>
             <p>
               <strong>Próximo agendamento:</strong>{' '}
@@ -563,24 +717,28 @@ const Page = () => {
               <button
                 onClick={handleEditClient}
                 className={style.editButton}
+                disabled={loading}
               >
-                Editar
+                {loading ? 'Carregando...' : 'Editar'}
               </button>
               <button
                 onClick={handleDownloadPDF}
                 className={style.downloadButton}
+                disabled={loading}
               >
                 Baixar PDF
               </button>
               <button
                 onClick={handleDeleteClient}
                 className={style.deleteButton}
+                disabled={loading}
               >
-                Deletar
+                {loading ? 'Deletando...' : 'Deletar'}
               </button>
               <button
                 onClick={() => setSelectedClient(null)}
                 className={style.closeLink}
+                disabled={loading}
               >
                 Fechar
               </button>
@@ -671,10 +829,10 @@ const Page = () => {
                 
                 <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
                 <div className={style.formButtons}>
-                  <button type="button" onClick={handleUpdateClient} className={style.saveButton}>
-                    Salvar alterações
+                  <button type="button" onClick={handleUpdateClient} className={style.saveButton} disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar alterações'}
                   </button>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className={style.cancelButton}>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className={style.cancelButton} disabled={loading}>
                     Cancelar
                   </button>
                 </div>
@@ -732,10 +890,10 @@ const Page = () => {
                 
                 <textarea name="descricao" value={formData.descricao} onChange={handleInputChange} className={style.formTextarea} placeholder="Descrição do serviço" />
                 <div className={style.formButtons}>
-                  <button type="button" onClick={handleSaveEvent} className={style.saveButton}>
-                    Salvar
+                  <button type="button" onClick={handleSaveEvent} className={style.saveButton} disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar'}
                   </button>
-                  <button type="button" onClick={() => setModalMode('view')} className={style.cancelButton}>
+                  <button type="button" onClick={() => setModalMode('view')} className={style.cancelButton} disabled={loading}>
                     Cancelar
                   </button>
                 </div>
@@ -795,7 +953,8 @@ const Page = () => {
           </div>
         </div>
       )}
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 };
 

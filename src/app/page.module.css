@@ -7,7 +7,9 @@
   margin-bottom: 1.5rem;
   display: flex;
   gap: 1rem;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .navButton {
@@ -24,6 +26,39 @@
   background-color: #e5e7eb;
 }
 
+/* Seção do usuário */
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.welcomeText {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.logoutButton {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  min-height: 44px;
+}
+
+.logoutButton:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
 /* Calendário */
 .calendarContainer {
   height: 80vh;
@@ -34,6 +69,28 @@
 @media (max-width: 768px) {
   .mainContainer {
     padding: 1rem;
+  }
+  
+  .navContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  
+  .userSection {
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+  }
+  
+  .welcomeText {
+    font-size: 12px;
+  }
+  
+  .logoutButton {
+    padding: 0.75rem 1rem;
+    min-height: 44px;
   }
   
   .calendarContainer {
@@ -135,6 +192,27 @@
 .clientEmail {
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+.clientAppointment {
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.loadingMessage {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.noClientsMessage {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 /* Modal overlay */
