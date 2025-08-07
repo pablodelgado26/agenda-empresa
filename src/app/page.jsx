@@ -35,6 +35,7 @@ const EMAIL_EMPRESA = 'pablo.j.abreu@aluno.senai.br'; // Substitua pelo email da
 const Page = () => {
   const { user, logout } = useAuth();
   const [view, setView] = useState('agenda');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [nextAppointment, setNextAppointment] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,10 +213,16 @@ const Page = () => {
       }
     };
 
+    const preventDoubleTapZoom = (e) => {
+      e.preventDefault();
+    };
+
     document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('dblclick', preventDoubleTapZoom, { passive: false });
     
     return () => {
       document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('dblclick', preventDoubleTapZoom);
     };
   }, []);
 
@@ -597,6 +604,12 @@ const Page = () => {
           events={events}
           views={['month']}
           defaultView="month"
+          view="month"
+          date={currentDate}
+          onNavigate={(date) => {
+            console.log('Navegando para:', date);
+            setCurrentDate(date);
+          }}
           startAccessor="start"
           endAccessor="end"
           className={style.calendarContainer}
@@ -615,8 +628,8 @@ const Page = () => {
             work_week: 'Semana útil',
             day: 'Dia',
             month: 'Mês',
-            previous: 'Anterior',
-            next: 'Próximo',
+            previous: '❮',
+            next: '❯',
             yesterday: 'Ontem',
             tomorrow: 'Amanhã',
             today: 'Hoje',

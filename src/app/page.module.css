@@ -62,7 +62,93 @@
 /* Calendário */
 .calendarContainer {
   height: 80vh;
+  touch-action: pan-x pan-y;
+}
+
+/* Botões de navegação do calendário */
+.calendarContainer .rbc-btn-group button {
+  background: #2563eb !important;
+  color: white !important;
+  border: 1px solid #2563eb !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  min-height: 44px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  margin: 0 2px !important;
+}
+
+.calendarContainer .rbc-btn-group button:hover {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+.calendarContainer .rbc-btn-group button:active {
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+}
+
+.calendarContainer .rbc-toolbar {
+  margin-bottom: 15px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+}
+
+.calendarContainer .rbc-toolbar-label {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #1e40af !important;
+  margin: 0 20px !important;
+}
+
+/* Melhorar células do calendário */
+.calendarContainer .rbc-date-cell {
+  padding: 5px;
+  border: 1px solid #e5e7eb;
+}
+
+.calendarContainer .rbc-date-cell button {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
   touch-action: manipulation;
+  min-height: 36px;
+}
+
+.calendarContainer .rbc-date-cell button:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.calendarContainer .rbc-today {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.calendarContainer .rbc-off-range-bg {
+  background-color: #f9fafb;
+}
+
+/* Eventos no calendário */
+.calendarContainer .rbc-event {
+  background-color: #2563eb;
+  border-radius: 4px;
+  color: white;
+  border: none;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.calendarContainer .rbc-event:hover {
+  background-color: #1d4ed8;
 }
 
 /* Media queries para mobile */
@@ -96,6 +182,49 @@
   .calendarContainer {
     height: 70vh;
     touch-action: manipulation;
+  }
+  
+  /* Melhorar navegação no mobile */
+  .calendarContainer .rbc-toolbar {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .calendarContainer .rbc-btn-group {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .calendarContainer .rbc-btn-group button {
+    padding: 12px 16px;
+    min-height: 44px;
+    font-size: 14px;
+    border-radius: 6px;
+    touch-action: manipulation;
+  }
+  
+  .calendarContainer .rbc-toolbar-label {
+    font-size: 16px;
+    margin: 0;
+    order: -1;
+  }
+  
+  /* Garantir que os botões de navegação sejam clicáveis no mobile */
+  .calendarContainer .rbc-btn-group button {
+    position: relative;
+    z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .calendarContainer .rbc-date-cell button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+  
+  .calendarContainer .rbc-event {
+    min-height: 20px;
+    margin: 1px;
   }
   
   /* Melhora o toque nos elementos do calendário */
