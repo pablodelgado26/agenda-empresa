@@ -287,17 +287,74 @@
   }
 }
 
-/* Seção de clientes */
+/* Clientes */
 .clientsContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .clientsTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  color: #1e40af;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Caixa de pesquisa */
+.searchContainer {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: white;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.searchInput::placeholder {
+  color: #9ca3af;
+}
+
+.clearSearchButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.clearSearchButton:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.searchResults {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border-left: 4px solid #2563eb;
 }
 
 .clientCard {
@@ -654,6 +711,150 @@
   object-fit: cover;
   border-radius: 0.375rem;
   border: 2px solid #d1d5db;
+}
+
+/* Novos estilos para múltiplas fotos */
+.photoGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.photoGroupLabel {
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+/* Galeria de fotos nos formulários */
+.photoGallery {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photoPreview {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.photoThumbnail {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.removePhotoButton {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.removePhotoButton:hover {
+  background: #dc2626;
+}
+
+/* Botões de foto */
+.photoButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.galleryButton {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.galleryButton:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.galleryButton:active {
+  transform: translateY(0);
+}
+
+.cameraButton {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.cameraButton:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cameraButton:active {
+  transform: translateY(0);
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .photoButtons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .galleryButton,
+  .cameraButton {
+    flex: none;
+    width: 100%;
+    min-width: auto;
+  }
 }
 
 /* Estilos para formulário de fotos */

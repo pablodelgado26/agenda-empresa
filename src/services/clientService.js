@@ -30,10 +30,10 @@ export const clientService = {
     }
   },
 
-  // Criar novo cliente
+  // Criar um novo cliente
   async createClient(clientData) {
     try {
-      const response = await api.post('/clients', {
+      const response = await apiClient.post('/clients', {
         name: clientData.nome,
         email: clientData.email,
         endereco: clientData.endereco,
@@ -41,19 +41,20 @@ export const clientService = {
         CPF: clientData.cpf,
         proximoAgendamento: clientData.nextAppointment,
         descricao: clientData.descricao,
-        fotoAntes: clientData.fotoAntes,
-        fotoDepois: clientData.fotoDepois
+        fotoAntes: clientData.fotoAntes || [], // Array de fotos
+        fotoDepois: clientData.fotoDepois || [] // Array de fotos
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error('Erro ao criar cliente:', error);
+      throw error.response?.data || { error: 'Erro ao criar cliente' };
     }
   },
 
-  // Atualizar cliente
+  // Atualizar um cliente
   async updateClient(id, clientData) {
     try {
-      const response = await api.put(`/clients/${id}`, {
+      const response = await apiClient.put(`/clients/${id}`, {
         name: clientData.nome,
         email: clientData.email,
         endereco: clientData.endereco,
@@ -61,12 +62,13 @@ export const clientService = {
         CPF: clientData.cpf,
         proximoAgendamento: clientData.nextAppointment,
         descricao: clientData.descricao,
-        fotoAntes: clientData.fotoAntes,
-        fotoDepois: clientData.fotoDepois
+        fotoAntes: clientData.fotoAntes || [], // Array de fotos
+        fotoDepois: clientData.fotoDepois || [] // Array de fotos
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error('Erro ao atualizar cliente:', error);
+      throw error.response?.data || { error: 'Erro ao atualizar cliente' };
     }
   },
 

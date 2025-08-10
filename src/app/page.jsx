@@ -51,13 +51,14 @@ const Page = () => {
     aniversario: '',
     cpf: '',
     nextAppointment: '',
-    fotoAntes: '',
-    fotoDepois: '',
+    fotoAntes: [], // Array de fotos
+    fotoDepois: [], // Array de fotos
   });
   const [selectedClient, setSelectedClient] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState(''); // 'antes' ou 'depois'
   const [stream, setStream] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Inicializar EmailJS
   useEffect(() => {
@@ -295,8 +296,8 @@ const Page = () => {
         email: '',
         aniversario: '',
         cpf: '',
-        fotoAntes: '',
-        fotoDepois: '',
+        fotoAntes: [],
+        fotoDepois: [],
         nextAppointment: '',
       });
       setNextAppointment('');
@@ -347,8 +348,8 @@ const Page = () => {
       email: selectedClient.email || '',
       aniversario: clientData.dataNascimento ? clientData.dataNascimento.split('T')[0] : '',
       cpf: selectedClient.cpf || clientData.CPF || '',
-      fotoAntes: selectedClient.fotoAntes || '',
-      fotoDepois: selectedClient.fotoDepois || '',
+      fotoAntes: Array.isArray(selectedClient.fotoAntes) ? selectedClient.fotoAntes : [],
+      fotoDepois: Array.isArray(selectedClient.fotoDepois) ? selectedClient.fotoDepois : [],
       nextAppointment: selectedClient.nextAppointment || '',
     });
     setNextAppointment(clientData.proximoAgendamento ? clientData.proximoAgendamento.split('T')[0] : '');
@@ -390,8 +391,8 @@ const Page = () => {
         email: '',
         aniversario: '',
         cpf: '',
-        fotoAntes: '',
-        fotoDepois: '',
+        fotoAntes: [],
+        fotoDepois: [],
         nextAppointment: '',
       });
       setNextAppointment('');
@@ -453,41 +454,73 @@ const Page = () => {
     yPosition += splitText.length * 5 + 15;
     
     // Adicionar fotos se existirem
-    if (selectedClient.fotoAntes || selectedClient.fotoDepois) {
+    if ((Array.isArray(selectedClient.fotoAntes) && selectedClient.fotoAntes.length > 0) || 
+        (Array.isArray(selectedClient.fotoDepois) && selectedClient.fotoDepois.length > 0)) {
       doc.setFontSize(14);
       doc.text('Fotos:', 20, yPosition);
-      yPosition += 10;
+      yPosition += 15;
       
-      const photoWidth = 70;
-      const photoHeight = 70;
-      let xPosition = 20;
+      const photoWidth = 60;
+      const photoHeight = 60;
+      const photosPerRow = 2;
+      let currentRow = 0;
+      let currentCol = 0;
       
-      // Foto Antes
-      if (selectedClient.fotoAntes) {
+      // Fotos Antes
+      if (Array.isArray(selectedClient.fotoAntes) && selectedClient.fotoAntes.length > 0) {
         doc.setFontSize(12);
-        doc.text('Antes:', xPosition, yPosition);
-        try {
-          doc.addImage(selectedClient.fotoAntes, 'JPEG', xPosition, yPosition + 5, photoWidth, photoHeight);
-        } catch (error) {
-          console.warn('Erro ao adicionar foto "Antes" ao PDF:', error);
-          doc.text('Erro ao carregar foto', xPosition, yPosition + 35);
-        }
-        xPosition += photoWidth + 20;
+        doc.text('Antes:', 20, yPosition);
+        yPosition += 10;
+        
+        selectedClient.fotoAntes.forEach((foto, index) => {
+          const xPosition = 20 + (currentCol * (photoWidth + 10));
+          const yPos = yPosition + (currentRow * (photoHeight + 10));
+          
+          try {
+            doc.addImage(foto, 'JPEG', xPosition, yPos, photoWidth, photoHeight);
+          } catch (error) {
+            console.warn(`Erro ao adicionar foto "Antes" ${index + 1} ao PDF:`, error);
+            doc.text(`Erro foto ${index + 1}`, xPosition, yPos + 30);
+          }
+          
+          currentCol++;
+          if (currentCol >= photosPerRow) {
+            currentCol = 0;
+            currentRow++;
+          }
+        });
+        
+        yPosition += Math.ceil(selectedClient.fotoAntes.length / photosPerRow) * (photoHeight + 10) + 15;
+        currentRow = 0;
+        currentCol = 0;
       }
       
-      // Foto Depois
-      if (selectedClient.fotoDepois) {
+      // Fotos Depois
+      if (Array.isArray(selectedClient.fotoDepois) && selectedClient.fotoDepois.length > 0) {
         doc.setFontSize(12);
-        doc.text('Depois:', xPosition, yPosition);
-        try {
-          doc.addImage(selectedClient.fotoDepois, 'JPEG', xPosition, yPosition + 5, photoWidth, photoHeight);
-        } catch (error) {
-          console.warn('Erro ao adicionar foto "Depois" ao PDF:', error);
-          doc.text('Erro ao carregar foto', xPosition, yPosition + 35);
-        }
+        doc.text('Depois:', 20, yPosition);
+        yPosition += 10;
+        
+        selectedClient.fotoDepois.forEach((foto, index) => {
+          const xPosition = 20 + (currentCol * (photoWidth + 10));
+          const yPos = yPosition + (currentRow * (photoHeight + 10));
+          
+          try {
+            doc.addImage(foto, 'JPEG', xPosition, yPos, photoWidth, photoHeight);
+          } catch (error) {
+            console.warn(`Erro ao adicionar foto "Depois" ${index + 1} ao PDF:`, error);
+            doc.text(`Erro foto ${index + 1}`, xPosition, yPos + 30);
+          }
+          
+          currentCol++;
+          if (currentCol >= photosPerRow) {
+            currentCol = 0;
+            currentRow++;
+          }
+        });
+        
+        yPosition += Math.ceil(selectedClient.fotoDepois.length / photosPerRow) * (photoHeight + 10) + 20;
       }
-      
-      yPosition += photoHeight + 20;
     }
     
     // Data de geração do relatório
@@ -534,20 +567,94 @@ const Page = () => {
     const photoData = canvas.toDataURL('image/jpeg', 0.8);
     
     if (cameraMode === 'antes') {
-      setFormData(prev => ({ ...prev, fotoAntes: photoData }));
+      setFormData(prev => ({ 
+        ...prev, 
+        fotoAntes: [...prev.fotoAntes, photoData] 
+      }));
     } else if (cameraMode === 'depois') {
-      setFormData(prev => ({ ...prev, fotoDepois: photoData }));
+      setFormData(prev => ({ 
+        ...prev, 
+        fotoDepois: [...prev.fotoDepois, photoData] 
+      }));
     }
     
     closeCamera();
   };
 
-  const removePhoto = (type) => {
+  const removePhoto = (type, index) => {
     if (type === 'antes') {
-      setFormData(prev => ({ ...prev, fotoAntes: '' }));
+      setFormData(prev => ({
+        ...prev,
+        fotoAntes: prev.fotoAntes.filter((_, i) => i !== index)
+      }));
     } else if (type === 'depois') {
-      setFormData(prev => ({ ...prev, fotoDepois: '' }));
+      setFormData(prev => ({
+        ...prev,
+        fotoDepois: prev.fotoDepois.filter((_, i) => i !== index)
+      }));
     }
+  };
+
+  const handleGallerySelect = (type) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    
+    input.onchange = (event) => {
+      const files = Array.from(event.target.files);
+      
+      if (files.length === 0) return;
+      
+      // Mostrar feedback de carregamento
+      const loadingMessage = `Carregando ${files.length} foto(s)...`;
+      console.log(loadingMessage);
+      
+      let processedCount = 0;
+      const totalFiles = files.length;
+      
+      files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          // Verificar tamanho do arquivo (máximo 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`A imagem ${file.name} é muito grande. Máximo 5MB por foto.`);
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const photoData = e.target.result;
+            
+            if (type === 'antes') {
+              setFormData(prev => ({ 
+                ...prev, 
+                fotoAntes: [...prev.fotoAntes, photoData] 
+              }));
+            } else if (type === 'depois') {
+              setFormData(prev => ({ 
+                ...prev, 
+                fotoDepois: [...prev.fotoDepois, photoData] 
+              }));
+            }
+            
+            processedCount++;
+            if (processedCount === totalFiles) {
+              console.log(`${totalFiles} foto(s) adicionada(s) com sucesso!`);
+            }
+          };
+          
+          reader.onerror = () => {
+            alert(`Erro ao carregar a imagem ${file.name}`);
+          };
+          
+          reader.readAsDataURL(file);
+        } else {
+          alert(`${file.name} não é um arquivo de imagem válido.`);
+        }
+      });
+    };
+    
+    input.click();
   };
 
   const eventsForSelectedDate = events.filter((e) => {
@@ -566,6 +673,21 @@ const Page = () => {
 
   // Usar diretamente a lista de clientes da API
   const uniqueClients = clients;
+
+  // Filtrar clientes com base na pesquisa
+  const filteredClients = uniqueClients.filter(client => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    const nome = (client.name || '').toLowerCase();
+    const email = (client.email || '').toLowerCase();
+    const cpf = (client.CPF || '').replace(/\D/g, ''); // Remove formatação do CPF
+    const searchCpf = searchTerm.replace(/\D/g, ''); // Remove formatação da pesquisa
+    
+    return nome.includes(searchLower) || 
+           email.includes(searchLower) || 
+           cpf.includes(searchCpf);
+  });
 
   return (
     <ProtectedRoute>
@@ -643,40 +765,72 @@ const Page = () => {
       {view === 'clientes' && (
         <div className={style.clientsContainer}>
           <h2 className={style.clientsTitle}>Meus Clientes</h2>
+          
+          {/* Caixa de pesquisa */}
+          <div className={style.searchContainer}>
+            <input
+              type="text"
+              placeholder="Pesquisar por nome, email ou CPF..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={style.searchInput}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className={style.clearSearchButton}
+                title="Limpar pesquisa"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          
           {loading ? (
             <div className={style.loadingMessage}>Carregando clientes...</div>
-          ) : uniqueClients.length > 0 ? (
-            uniqueClients.map((client, idx) => (
-              <div
-                key={client.id || idx}
-                className={style.clientCard}
-                onClick={() => {
-                  // Criar objeto compatível com o formato esperado
-                  const clientEvent = {
-                    id: client.id,
-                    title: client.name,
-                    desc: client.descricao,
-                    endereco: client.endereco,
-                    email: client.email,
-                    aniversario: client.dataNascimento,
-                    cpf: client.CPF,
-                    fotoAntes: client.fotoAntes,
-                    fotoDepois: client.fotoDepois,
-                    nextAppointment: client.proximoAgendamento,
-                    clientData: client
-                  };
-                  setSelectedClient(clientEvent);
-                }}
-              >
-                <p className={style.clientName}>{client.name}</p>
-                <p className={style.clientEmail}>{client.email}</p>
-                {client.proximoAgendamento && (
-                  <p className={style.clientAppointment}>
-                    Próximo agendamento: {new Date(client.proximoAgendamento).toLocaleDateString('pt-BR')}
-                  </p>
-                )}
-              </div>
-            ))
+          ) : filteredClients.length > 0 ? (
+            <>
+              {searchTerm && (
+                <div className={style.searchResults}>
+                  {filteredClients.length} cliente(s) encontrado(s)
+                </div>
+              )}
+              {filteredClients.map((client, idx) => (
+                <div
+                  key={client.id || idx}
+                  className={style.clientCard}
+                  onClick={() => {
+                    // Criar objeto compatível com o formato esperado
+                    const clientEvent = {
+                      id: client.id,
+                      title: client.name,
+                      desc: client.descricao,
+                      endereco: client.endereco,
+                      email: client.email,
+                      aniversario: client.dataNascimento,
+                      cpf: client.CPF,
+                      fotoAntes: client.fotoAntes,
+                      fotoDepois: client.fotoDepois,
+                      nextAppointment: client.proximoAgendamento,
+                      clientData: client
+                    };
+                    setSelectedClient(clientEvent);
+                  }}
+                >
+                  <p className={style.clientName}>{client.name}</p>
+                  <p className={style.clientEmail}>{client.email}</p>
+                  {client.proximoAgendamento && (
+                    <p className={style.clientAppointment}>
+                      Próximo agendamento: {new Date(client.proximoAgendamento).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : searchTerm ? (
+            <div className={style.noClientsMessage}>
+              Nenhum cliente encontrado para "{searchTerm}".
+            </div>
           ) : (
             <div className={style.noClientsMessage}>
               Nenhum cliente cadastrado ainda.
@@ -706,20 +860,33 @@ const Page = () => {
             </p>
             <p><strong>Descrição:</strong> {selectedClient.desc}</p>
             
-            {(selectedClient.fotoAntes || selectedClient.fotoDepois) && (
+            {((Array.isArray(selectedClient.fotoAntes) && selectedClient.fotoAntes.length > 0) || 
+              (Array.isArray(selectedClient.fotoDepois) && selectedClient.fotoDepois.length > 0)) && (
               <div className={style.photosSection}>
                 <h4><strong>Fotos:</strong></h4>
                 <div className={style.photosContainer}>
-                  {selectedClient.fotoAntes && (
-                    <div className={style.photoItem}>
-                      <p className={style.photoLabel}>Antes:</p>
-                      <img src={selectedClient.fotoAntes} alt="Foto Antes" className={style.photo} />
+                  {Array.isArray(selectedClient.fotoAntes) && selectedClient.fotoAntes.length > 0 && (
+                    <div className={style.photoGroup}>
+                      <p className={style.photoGroupLabel}>Antes:</p>
+                      <div className={style.photoGrid}>
+                        {selectedClient.fotoAntes.map((foto, index) => (
+                          <div key={`antes-${index}`} className={style.photoItem}>
+                            <img src={foto} alt={`Foto Antes ${index + 1}`} className={style.photo} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {selectedClient.fotoDepois && (
-                    <div className={style.photoItem}>
-                      <p className={style.photoLabel}>Depois:</p>
-                      <img src={selectedClient.fotoDepois} alt="Foto Depois" className={style.photo} />
+                  {Array.isArray(selectedClient.fotoDepois) && selectedClient.fotoDepois.length > 0 && (
+                    <div className={style.photoGroup}>
+                      <p className={style.photoGroupLabel}>Depois:</p>
+                      <div className={style.photoGrid}>
+                        {selectedClient.fotoDepois.map((foto, index) => (
+                          <div key={`depois-${index}`} className={style.photoItem}>
+                            <img src={foto} alt={`Foto Depois ${index + 1}`} className={style.photo} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -808,34 +975,56 @@ const Page = () => {
                   <h4>Fotos do Cliente:</h4>
                   <div className={style.photoRow}>
                     <div className={style.photoColumn}>
-                      <label>Foto Antes:</label>
-                      {formData.fotoAntes ? (
-                        <div className={style.photoPreview}>
-                          <img src={formData.fotoAntes} alt="Antes" className={style.photoThumbnail} />
-                          <button type="button" onClick={() => removePhoto('antes')} className={style.removePhotoButton}>
-                            Remover
+                      <label>Fotos Antes:</label>
+                      <div className={style.photoGallery}>
+                        {formData.fotoAntes.map((foto, index) => (
+                          <div key={`edit-antes-${index}`} className={style.photoPreview}>
+                            <img src={foto} alt={`Antes ${index + 1}`} className={style.photoThumbnail} />
+                            <button 
+                              type="button" 
+                              onClick={() => removePhoto('antes', index)} 
+                              className={style.removePhotoButton}
+                              title="Remover foto"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <div className={style.photoButtons}>
+                          <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
+                            📷 Câmera
+                          </button>
+                          <button type="button" onClick={() => handleGallerySelect('antes')} className={style.galleryButton}>
+                            🖼️ Galeria
                           </button>
                         </div>
-                      ) : (
-                        <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
-                          📷 Tirar Foto Antes
-                        </button>
-                      )}
+                      </div>
                     </div>
                     <div className={style.photoColumn}>
-                      <label>Foto Depois:</label>
-                      {formData.fotoDepois ? (
-                        <div className={style.photoPreview}>
-                          <img src={formData.fotoDepois} alt="Depois" className={style.photoThumbnail} />
-                          <button type="button" onClick={() => removePhoto('depois')} className={style.removePhotoButton}>
-                            Remover
+                      <label>Fotos Depois:</label>
+                      <div className={style.photoGallery}>
+                        {formData.fotoDepois.map((foto, index) => (
+                          <div key={`edit-depois-${index}`} className={style.photoPreview}>
+                            <img src={foto} alt={`Depois ${index + 1}`} className={style.photoThumbnail} />
+                            <button 
+                              type="button" 
+                              onClick={() => removePhoto('depois', index)} 
+                              className={style.removePhotoButton}
+                              title="Remover foto"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <div className={style.photoButtons}>
+                          <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
+                            📷 Câmera
+                          </button>
+                          <button type="button" onClick={() => handleGallerySelect('depois')} className={style.galleryButton}>
+                            🖼️ Galeria
                           </button>
                         </div>
-                      ) : (
-                        <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
-                          📷 Tirar Foto Depois
-                        </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -869,34 +1058,56 @@ const Page = () => {
                   <h4>Fotos do Cliente:</h4>
                   <div className={style.photoRow}>
                     <div className={style.photoColumn}>
-                      <label>Foto Antes:</label>
-                      {formData.fotoAntes ? (
-                        <div className={style.photoPreview}>
-                          <img src={formData.fotoAntes} alt="Antes" className={style.photoThumbnail} />
-                          <button type="button" onClick={() => removePhoto('antes')} className={style.removePhotoButton}>
-                            Remover
+                      <label>Fotos Antes:</label>
+                      <div className={style.photoGallery}>
+                        {formData.fotoAntes.map((foto, index) => (
+                          <div key={`create-antes-${index}`} className={style.photoPreview}>
+                            <img src={foto} alt={`Antes ${index + 1}`} className={style.photoThumbnail} />
+                            <button 
+                              type="button" 
+                              onClick={() => removePhoto('antes', index)} 
+                              className={style.removePhotoButton}
+                              title="Remover foto"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <div className={style.photoButtons}>
+                          <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
+                            📷 Câmera
+                          </button>
+                          <button type="button" onClick={() => handleGallerySelect('antes')} className={style.galleryButton}>
+                            🖼️ Galeria
                           </button>
                         </div>
-                      ) : (
-                        <button type="button" onClick={() => openCamera('antes')} className={style.cameraButton}>
-                          📷 Tirar Foto Antes
-                        </button>
-                      )}
+                      </div>
                     </div>
                     <div className={style.photoColumn}>
-                      <label>Foto Depois:</label>
-                      {formData.fotoDepois ? (
-                        <div className={style.photoPreview}>
-                          <img src={formData.fotoDepois} alt="Depois" className={style.photoThumbnail} />
-                          <button type="button" onClick={() => removePhoto('depois')} className={style.removePhotoButton}>
-                            Remover
+                      <label>Fotos Depois:</label>
+                      <div className={style.photoGallery}>
+                        {formData.fotoDepois.map((foto, index) => (
+                          <div key={`create-depois-${index}`} className={style.photoPreview}>
+                            <img src={foto} alt={`Depois ${index + 1}`} className={style.photoThumbnail} />
+                            <button 
+                              type="button" 
+                              onClick={() => removePhoto('depois', index)} 
+                              className={style.removePhotoButton}
+                              title="Remover foto"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <div className={style.photoButtons}>
+                          <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
+                            📷 Câmera
+                          </button>
+                          <button type="button" onClick={() => handleGallerySelect('depois')} className={style.galleryButton}>
+                            🖼️ Galeria
                           </button>
                         </div>
-                      ) : (
-                        <button type="button" onClick={() => openCamera('depois')} className={style.cameraButton}>
-                          📷 Tirar Foto Depois
-                        </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -924,8 +1135,8 @@ const Page = () => {
                   email: '',
                   aniversario: '',
                   cpf: '',
-                  fotoAntes: '',
-                  fotoDepois: '',
+                  fotoAntes: [],
+                  fotoDepois: [],
                   nextAppointment: '',
                 });
                 setNextAppointment('');
