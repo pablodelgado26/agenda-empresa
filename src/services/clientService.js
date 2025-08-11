@@ -33,7 +33,7 @@ export const clientService = {
   // Criar um novo cliente
   async createClient(clientData) {
     try {
-      const response = await apiClient.post('/clients', {
+      const response = await api.post('/clients', {
         name: clientData.nome,
         email: clientData.email,
         endereco: clientData.endereco,
@@ -54,7 +54,7 @@ export const clientService = {
   // Atualizar um cliente
   async updateClient(id, clientData) {
     try {
-      const response = await apiClient.put(`/clients/${id}`, {
+      const response = await api.put(`/clients/${id}`, {
         name: clientData.nome,
         email: clientData.email,
         endereco: clientData.endereco,
