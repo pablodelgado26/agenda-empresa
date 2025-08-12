@@ -1,5 +1,51 @@
 @import "tailwindcss";
 
+/* Regras globais para melhorar responsividade no mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Regras específicas para react-big-calendar */
+.rbc-calendar *,
+.rbc-calendar button,
+.rbc-calendar .rbc-btn,
+.rbc-calendar .rbc-date-cell,
+.rbc-calendar .rbc-date-cell *,
+.rbc-calendar .rbc-date-cell button,
+.rbc-calendar .rbc-date-cell div,
+.rbc-calendar .rbc-date-cell span,
+.rbc-calendar .rbc-today,
+.rbc-calendar .rbc-today *,
+.rbc-calendar .rbc-event,
+.rbc-calendar .rbc-show-more,
+.rbc-calendar .rbc-month-view,
+.rbc-calendar .rbc-month-row,
+.rbc-calendar .rbc-row-content,
+.rbc-calendar [role="button"] {
+  touch-action: manipulation !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  cursor: pointer !important;
+}
+
+/* Específico para elementos filhos dos dias - não devem interceptar cliques */
+.rbc-calendar .rbc-date-cell span,
+.rbc-calendar .rbc-date-cell div:not(button),
+.rbc-calendar .rbc-today span,
+.rbc-calendar .rbc-today div:not(button) {
+  pointer-events: none !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #222222;
@@ -38,13 +84,17 @@ a:hover {
 
 button {
   font-family: var(--font-sans);
-  background: var(--primary);
-  color: var(--secondary);
   border: none;
   border-radius: 4px;
   padding: 0.5em 1em;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  
+  /* Responsividade mobile */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 button:hover {
   background: var(--foreground);

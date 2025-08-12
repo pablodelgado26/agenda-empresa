@@ -110,7 +110,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className={style.loginContainer}>
+    <div className={style.loginContainer} suppressHydrationWarning={true}>
       <div className={style.loginCard}>
         <div className={style.loginHeader}>
           <h1 className={style.loginTitle}>
@@ -127,6 +127,7 @@ const LoginPage = () => {
         <form 
           className={style.loginForm} 
           onSubmit={isRegister ? handleRegister : handleLogin}
+          suppressHydrationWarning={true}
         >
           {isRegister && (
             <div className={style.inputGroup}>

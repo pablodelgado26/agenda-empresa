@@ -555,18 +555,124 @@ const Page = () => {
     doc.save(`cliente_${selectedClient.title.replace(/\s+/g, '_')}.pdf`);
   };
 
+  // Função para melhorar responsividade de toque em botões
+  const createResponsiveHandler = (handler) => {
+    return {
+      onClick: handler,
+      onTouchStart: (e) => {
+        // Previne o delay de 300ms no mobile
+        e.preventDefault();
+        handler(e);
+      },
+      onTouchEnd: (e) => {
+        e.preventDefault();
+      }
+    };
+  };
+
   const openCamera = async (mode) => {
+    // Verificar se estamos no ambiente do navegador
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      alert('Funcionalidade de câmera não disponível neste ambiente.');
+      return;
+    }
+
+    // Verificar se há suporte básico para câmera
+    const hasBasicCameraSupport = !!(
+      navigator.mediaDevices?.getUserMedia ||
+      navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia
+    );
+
+    if (!hasBasicCameraSupport) {
+      // Oferecer alternativa quando câmera não está disponível
+      const useFileInput = confirm(
+        'Câmera não disponível neste dispositivo/navegador.\n\n' +
+        'Deseja selecionar uma foto da galeria/arquivos?\n\n' +
+        'Clique OK para abrir seletor de arquivos ou Cancelar para voltar.'
+      );
+      
+      if (useFileInput) {
+        handleGallerySelect(mode);
+      }
+      return;
+    }
+
     setCameraMode(mode);
     setIsCameraOpen(true);
+    
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      setStream(mediaStream);
+      let mediaStream = null;
+      
+      // Tentar API moderna primeiro
+      if (navigator.mediaDevices?.getUserMedia) {
+        try {
+          // Tentar câmera traseira primeiro
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'environment',
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 }
+            }
+          });
+        } catch (backCameraError) {
+          console.log('Câmera traseira não disponível, tentando frontal...');
+          // Fallback para câmera frontal
+          try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: 'user',
+                width: { ideal: 1280, max: 1920 },
+                height: { ideal: 720, max: 1080 }
+              }
+            });
+            alert('Câmera traseira não disponível. Usando câmera frontal.');
+          } catch (frontCameraError) {
+            // Último fallback - qualquer câmera disponível
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+              video: true
+            });
+            alert('Usando câmera padrão disponível.');
+          }
+        }
+      } else {
+        // Fallback para navegadores antigos
+        const getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        mediaStream = await new Promise((resolve, reject) => {
+          getUserMedia.call(navigator, 
+            { video: true },
+            resolve,
+            reject
+          );
+        });
+      }
+      
+      if (mediaStream) {
+        setStream(mediaStream);
+      } else {
+        throw new Error('Não foi possível obter stream da câmera');
+      }
+      
     } catch (error) {
       console.error('Erro ao acessar a câmera:', error);
-      alert('Não foi possível acessar a câmera. Verifique as permissões.');
       setIsCameraOpen(false);
+      setCameraMode('');
+      
+      // Oferecer alternativa quando há erro
+      const useFileInput = confirm(
+        'Não foi possível acessar a câmera.\n\n' +
+        'Possíveis causas:\n' +
+        '• Permissões não concedidas\n' +
+        '• Câmera em uso por outro app\n' +
+        '• Navegador não suporta HTTPS\n\n' +
+        'Deseja selecionar uma foto da galeria/arquivos?\n\n' +
+        'Clique OK para abrir seletor de arquivos ou Cancelar para voltar.'
+      );
+      
+      if (useFileInput) {
+        handleGallerySelect(mode);
+      }
     }
   };
 
@@ -744,46 +850,81 @@ const Page = () => {
         </nav>
 
       {view === 'agenda' && (
-        <Calendar
-          localizer={localizer}
-          selectable
-          events={events}
-          views={['month']}
-          defaultView="month"
-          view="month"
-          date={currentDate}
-          onNavigate={(date) => {
-            console.log('Navegando para:', date);
-            setCurrentDate(date);
-          }}
-          startAccessor="start"
-          endAccessor="end"
+        <div
           className={style.calendarContainer}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={(event) => {
-            setSelectedClient(event);
-            setView('agenda');
+          style={{ position: 'relative' }}
+          onTouchStart={e => {
+            // Detecta se tocou em um dia do calendário
+            const target = e.target;
+            let cell = null;
+            if (target.classList.contains('rbc-day-bg')) {
+              cell = target;
+            } else if (target.classList.contains('rbc-date-cell')) {
+              cell = target.querySelector('button') || target;
+            } else if (target.closest('.rbc-date-cell')) {
+              cell = target.closest('.rbc-date-cell').querySelector('button') || target.closest('.rbc-date-cell');
+            }
+            if (cell) {
+              // Tenta extrair a data do atributo data-date ou aria-label
+              let dateStr = cell.getAttribute('data-date') || cell.getAttribute('aria-label');
+              if (!dateStr && cell.textContent) {
+                // Fallback: tenta construir a data a partir do texto do botão
+                const day = parseInt(cell.textContent);
+                if (!isNaN(day)) {
+                  const current = new Date();
+                  dateStr = new Date(current.getFullYear(), current.getMonth(), day).toISOString();
+                }
+              }
+              if (dateStr) {
+                // Chama handleSelectSlot diretamente
+                handleSelectSlot({ start: new Date(dateStr) });
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }
           }}
-          culture="pt-BR"
-          messages={{
-            date: 'Data',
-            time: 'Hora',
-            event: 'Evento',
-            allDay: 'Dia inteiro',
-            week: 'Semana',
-            work_week: 'Semana útil',
-            day: 'Dia',
-            month: 'Mês',
-            previous: '❮',
-            next: '❯',
-            yesterday: 'Ontem',
-            tomorrow: 'Amanhã',
-            today: 'Hoje',
-            agenda: 'Agenda',
-            noEventsInRange: 'Nenhum evento neste período.',
-            showMore: (total) => `+ Ver mais (${total})`,
-          }}
-        />
+        >
+          <Calendar
+            localizer={localizer}
+            selectable
+            events={events}
+            views={['month']}
+            defaultView="month"
+            view="month"
+            date={currentDate}
+            onNavigate={(date) => {
+              console.log('Navegando para:', date);
+              setCurrentDate(date);
+            }}
+            startAccessor="start"
+            endAccessor="end"
+            className={style.calendarContainer}
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={(event) => {
+              setSelectedClient(event);
+              setView('agenda');
+            }}
+            culture="pt-BR"
+            messages={{
+              date: 'Data',
+              time: 'Hora',
+              event: 'Evento',
+              allDay: 'Dia inteiro',
+              week: 'Semana',
+              work_week: 'Semana útil',
+              day: 'Dia',
+              month: 'Mês',
+              previous: '❮',
+              next: '❯',
+              yesterday: 'Ontem',
+              tomorrow: 'Amanhã',
+              today: 'Hoje',
+              agenda: 'Agenda',
+              noEventsInRange: 'Nenhum evento neste período.',
+              showMore: (total) => `+ Ver mais (${total})`,
+            }}
+          />
+        </div>
       )}
 
       {view === 'clientes' && (
