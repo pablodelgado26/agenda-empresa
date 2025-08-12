@@ -120,7 +120,6 @@ const Page = () => {
       setEvents(clientEvents);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
-      alert('Erro ao carregar clientes. Verifique sua conexão.');
     } finally {
       setLoading(false);
     }
