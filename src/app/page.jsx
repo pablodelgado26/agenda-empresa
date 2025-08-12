@@ -26,7 +26,8 @@ const localizer = dateFnsLocalizer({
 
 // Configuração do EmailJS - SUBSTITUA PELOS SEUS IDs
 const EMAILJS_SERVICE_ID = 'service_flukyy6'; // Substitua pelo seu Service ID
-const EMAILJS_TEMPLATE_ID = 'template_ny3weod'; // Substitua pelo seu Template ID
+const EMAILJS_TEMPLATE_ID_CLIENT = 'template_ny3weod'; // Template para CLIENTE
+const EMAILJS_TEMPLATE_ID_COMPANY = 'template_ny3weod'; // Template para EMPRESA (mesmo por enquanto)
 const EMAILJS_PUBLIC_KEY = 'cu1qq5jEzvnY76lkm'; // Substitua pela sua Public Key
 
 // Email da empresa
@@ -129,46 +130,70 @@ const Page = () => {
   const enviarEmailLembrete = async (cliente, diasRestantes) => {
     const dataAgendamento = new Date(cliente.nextAppointment).toLocaleDateString('pt-BR');
     
-    const templateParams = {
-      nome_cliente: cliente.title,
-      email_cliente: cliente.email || 'Não informado',
-      email_empresa: EMAIL_EMPRESA,
-      data_agendamento: dataAgendamento,
-      dias_restantes: diasRestantes,
-      endereco_cliente: cliente.endereco || 'Não informado',
-      cpf_cliente: cliente.cpf || 'Não informado',
-      descricao_servico: cliente.desc || 'Serviço não especificado'
-    };
-
     try {
-      // Enviar email para o cliente (só se tiver email)
-      if (cliente.email && cliente.email.trim() !== '') {
+      // Email para o cliente (mensagem amigável)
+      if (cliente.email && cliente.email.trim() !== '' && cliente.email.includes('@')) {
+        console.log('📧 Enviando email para cliente:', cliente.email);
+        
+        const clientParams = {
+          to_name: cliente.title || 'Cliente',
+          to_email: cliente.email,
+          from_name: 'Agenda Sr. Frio',
+          client_name: cliente.title || 'Cliente',
+          appointment_date: dataAgendamento,
+          days_remaining: diasRestantes.toString(),
+          client_address: cliente.endereco || 'Não informado',
+          service_description: cliente.desc || 'Serviço agendado',
+          company_email: EMAIL_EMPRESA,
+          message_type: 'cliente'
+        };
+
         await emailjs.send(
           EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          {
-            ...templateParams,
-            to_email: cliente.email,
-            tipo_destinatario: 'cliente'
-          }
+          EMAILJS_TEMPLATE_ID_CLIENT,
+          clientParams
         );
         console.log('✅ Email enviado para o cliente:', cliente.email);
+      } else {
+        console.log('⚠️ Cliente sem email válido, enviando apenas para empresa');
       }
 
-      // Enviar email para a empresa
+      // Aguardar 2 segundos entre envios
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Email para a empresa (informações completas)
+      console.log('📧 Enviando email para empresa:', EMAIL_EMPRESA);
+      
+      const companyParams = {
+        to_name: 'Equipe Sr. Frio',
+        to_email: EMAIL_EMPRESA,
+        from_name: 'Sistema Agenda Sr. Frio',
+        client_name: cliente.title || 'Cliente',
+        appointment_date: dataAgendamento,
+        days_remaining: diasRestantes.toString(),
+        client_address: cliente.endereco || 'Não informado',
+        client_cpf: cliente.cpf || 'Não informado',
+        client_email: cliente.email || 'Não informado',
+        service_description: cliente.desc || 'Serviço agendado',
+        company_email: EMAIL_EMPRESA,
+        message_type: 'empresa'
+      };
+
       await emailjs.send(
         EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          ...templateParams,
-          to_email: EMAIL_EMPRESA,
-          tipo_destinatario: 'empresa'
-        }
+        EMAILJS_TEMPLATE_ID_COMPANY,
+        companyParams
       );
       console.log('✅ Email enviado para a empresa:', EMAIL_EMPRESA);
       
     } catch (error) {
       console.error('❌ Erro ao enviar email:', error);
+      console.error('Detalhes do erro:', error.text || error.message);
+      
+      // Mostrar alerta apenas se for erro crítico
+      if (error.text && !error.text.includes('rate limit')) {
+        alert(`Erro ao enviar email: ${error.text}`);
+      }
     }
   };
 
