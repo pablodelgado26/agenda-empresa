@@ -31,7 +31,7 @@ const EMAILJS_TEMPLATE_ID_COMPANY = 'template_ny3weod'; // Template para EMPRESA
 const EMAILJS_PUBLIC_KEY = 'cu1qq5jEzvnY76lkm'; // Substitua pela sua Public Key
 
 // Email da empresa
-const EMAIL_EMPRESA = 'pablo.j.abreu@aluno.senai.br'; // Substitua pelo email da empresa
+const EMAIL_EMPRESA = 'srfriomanutencao@gmail.com'; // Substitua pelo email da empresa
 
 const Page = () => {
   const { user, logout } = useAuth();
@@ -294,6 +294,15 @@ const Page = () => {
       const adjustedDate = new Date(selectedDate);
       adjustedDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso
       
+      // Corrigir o nextAppointment para evitar problema de fuso horário
+      let nextAppointmentFormatted = null;
+      if (nextAppointment) {
+        // Se temos uma data, criar uma nova data em horário local
+        const [year, month, day] = nextAppointment.split('-');
+        const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0, 0);
+        nextAppointmentFormatted = appointmentDate.toISOString();
+      }
+      
       // Criar cliente na API
       const response = await clientService.createClient({
         nome: formData.nome,
@@ -304,7 +313,7 @@ const Page = () => {
         descricao: formData.descricao,
         fotoAntes: formData.fotoAntes,
         fotoDepois: formData.fotoDepois,
-        nextAppointment: nextAppointment || null
+        nextAppointment: nextAppointmentFormatted
       });
 
       console.log('Cliente criado:', response);
@@ -387,6 +396,15 @@ const Page = () => {
     try {
       setLoading(true);
       
+      // Corrigir o nextAppointment para evitar problema de fuso horário
+      let nextAppointmentFormatted = null;
+      if (nextAppointment) {
+        // Se temos uma data, criar uma nova data em horário local
+        const [year, month, day] = nextAppointment.split('-');
+        const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0, 0);
+        nextAppointmentFormatted = appointmentDate.toISOString();
+      }
+      
       // Atualizar cliente na API
       const response = await clientService.updateClient(selectedClient.clientData.id, {
         nome: formData.nome,
@@ -397,7 +415,7 @@ const Page = () => {
         descricao: formData.descricao,
         fotoAntes: formData.fotoAntes,
         fotoDepois: formData.fotoDepois,
-        nextAppointment: nextAppointment || null
+        nextAppointment: nextAppointmentFormatted
       });
 
       console.log('Cliente atualizado:', response);
