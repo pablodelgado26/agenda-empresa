@@ -275,18 +275,40 @@ const Page = () => {
       .slice(0, 14);
   };
 
+  const formatCNPJ = (value) => {
+    // Remove tudo que não for número
+    const numbers = value.replace(/\D/g, '');
+    // Aplica a máscara
+    return numbers
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+      .slice(0, 18);
+  };
+
+  const formatCPFOrCNPJ = (value) => {
+    // Remove tudo que não for número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Se tem mais de 11 dígitos, formata como CNPJ
+    if (numbers.length > 11) {
+      return formatCNPJ(value);
+    } else {
+      return formatCPF(value);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'cpf') {
-      setFormData((prev) => ({ ...prev, cpf: formatCPF(value) }));
+      setFormData((prev) => ({ ...prev, cpf: formatCPFOrCNPJ(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSaveEvent = async () => {
-    if (!formData.nome || !selectedDate) return;
-
     try {
       setLoading(true);
       
@@ -340,7 +362,10 @@ const Page = () => {
       alert('Cliente cadastrado com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
-      alert('Erro ao salvar cliente: ' + (error.error || 'Verifique os dados e tente novamente'));
+      console.error('Detalhes do erro:', JSON.stringify(error, null, 2));
+      
+      const errorMessage = error.error || error.message || 'Verifique os dados e tente novamente';
+      alert('Erro ao salvar cliente: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -1034,7 +1059,7 @@ const Page = () => {
               new Date(selectedClient.aniversario).toLocaleDateString('pt-BR') : 
               'Não informado'
             }</p>
-            <p><strong>CPF:</strong> {selectedClient.cpf}</p>
+            <p><strong>CPF/CNPJ:</strong> {selectedClient.cpf || 'Não informado'}</p>
             <p>
               <strong>Próximo agendamento:</strong>{' '}
               {selectedClient.nextAppointment
@@ -1148,7 +1173,7 @@ const Page = () => {
                   Data de Aniversário:
                   <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className={style.dateInput} />
                 </label>
-                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
+                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF ou CNPJ" maxLength={18} inputMode="numeric" pattern="\d*" />
                 <label className={style.dateLabel}>
                   Próximo agendamento:
                   <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />
@@ -1231,7 +1256,7 @@ const Page = () => {
                   Data de Aniversário:
                   <input name="aniversario" value={formData.aniversario} onChange={handleInputChange} type="date" className={style.dateInput} />
                 </label>
-                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF" maxLength={14} inputMode="numeric" pattern="\d*" />
+                <input name="cpf" value={formData.cpf} onChange={handleInputChange} className={style.cpfInput} placeholder="CPF ou CNPJ" maxLength={18} inputMode="numeric" pattern="\d*" />
                 <label className={style.dateLabel}>
                   Próximo agendamento:
                   <input type="date" value={nextAppointment} onChange={(e) => setNextAppointment(e.target.value)} className={style.dateInput} />

@@ -124,24 +124,37 @@ export const clientService = {
         throw { error: 'Total de imagens muito grande. Tente usar no máximo 6 fotos ou fotos menores.' };
       }
       
-      const response = await api.post('/clients', {
-        name: clientData.nome,
-        email: clientData.email,
-        endereco: clientData.endereco,
-        dataNascimento: clientData.aniversario,
-        CPF: clientData.cpf,
-        proximoAgendamento: clientData.nextAppointment,
-        descricao: clientData.descricao,
-        fotoAntes: compressedFotoAntes,
-        fotoDepois: compressedFotoDepois
-      });
+      const clientPayload = {
+        name: clientData.nome || 'Cliente',
+        email: clientData.email || 'nao.informado@email.com',
+        endereco: clientData.endereco || 'Endereço não informado',
+        dataNascimento: clientData.aniversario || '1990-01-01',
+        CPF: clientData.cpf || '000.000.000-00',
+        proximoAgendamento: clientData.nextAppointment ? clientData.nextAppointment : null,
+        descricao: clientData.descricao || 'Descrição não informada',
+        fotoAntes: compressedFotoAntes || [],
+        fotoDepois: compressedFotoDepois || []
+      };
+      
+      console.log('Dados que serão enviados:', clientPayload);
+      
+      const response = await api.post('/clients', clientPayload);
       return response.data;
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
+      console.error('Resposta do servidor:', error.response?.data);
+      console.error('Status:', error.response?.status);
+      console.error('Headers:', error.response?.headers);
       
       // Se foi erro 413, mostrar mensagem específica
       if (error.response?.status === 413) {
         throw { error: 'Imagens muito grandes. Tente usar menos fotos ou reduza o tamanho das imagens.' };
+      }
+      
+      // Se foi erro 400, mostrar detalhes do servidor
+      if (error.response?.status === 400) {
+        const serverMessage = error.response?.data?.message || error.response?.data?.error || 'Dados inválidos';
+        throw { error: `Erro de validação: ${serverMessage}` };
       }
       
       throw error.response?.data || { error: 'Erro ao criar cliente' };
@@ -168,13 +181,13 @@ export const clientService = {
       }
       
       const response = await api.put(`/clients/${id}`, {
-        name: clientData.nome,
-        email: clientData.email,
-        endereco: clientData.endereco,
-        dataNascimento: clientData.aniversario,
-        CPF: clientData.cpf,
-        proximoAgendamento: clientData.nextAppointment,
-        descricao: clientData.descricao,
+        name: clientData.nome || 'Cliente',
+        email: clientData.email || 'nao.informado@email.com',
+        endereco: clientData.endereco || 'Endereço não informado',
+        dataNascimento: clientData.aniversario || '1990-01-01',
+        CPF: clientData.cpf || '000.000.000-00',
+        proximoAgendamento: clientData.nextAppointment || null,
+        descricao: clientData.descricao || 'Descrição não informada',
         fotoAntes: compressedFotoAntes,
         fotoDepois: compressedFotoDepois
       });
