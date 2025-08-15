@@ -133,7 +133,8 @@ export const clientService = {
         proximoAgendamento: clientData.nextAppointment ? clientData.nextAppointment : null,
         descricao: clientData.descricao || 'Descrição não informada',
         fotoAntes: compressedFotoAntes || [],
-        fotoDepois: compressedFotoDepois || []
+        fotoDepois: compressedFotoDepois || [],
+        dataRegistro: clientData.dataRegistro // ✅ CAMPO OBRIGATÓRIO PARA BACKEND
       };
       
       console.log('Dados que serão enviados:', clientPayload);

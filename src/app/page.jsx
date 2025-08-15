@@ -1,27 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Calendar, ConfigProvider } from 'antd';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
+import updateLocale from 'dayjs/plugin/updateLocale';
+import ptBR from 'antd/locale/pt_BR';
 import style from './page.module.css';
-import ptBR from 'date-fns/locale/pt-BR';
 import jsPDF from 'jspdf';
 import emailjs from '@emailjs/browser';
 import { ProtectedRoute, useAuth } from '../context/AuthContext';
 import { clientService } from '../services/clientService';
 
-const locales = { 'pt-BR': ptBR };
+// Configurar dayjs para português brasileiro
+dayjs.extend(updateLocale);
+dayjs.locale('pt-br');
 
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
+// Customizar ainda mais a localização
+dayjs.updateLocale('pt-br', {
+  weekdays: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+  weekdaysShort: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+  weekdaysMin: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+  months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+  monthsShort: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 });
 
 // Configuração do EmailJS - SUBSTITUA PELOS SEUS IDs
@@ -36,12 +37,12 @@ const EMAIL_EMPRESA = 'srfriomanutencao@gmail.com'; // Substitua pelo email da e
 const Page = () => {
   const { user, logout } = useAuth();
   const [view, setView] = useState('agenda');
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(dayjs());
   const [nextAppointment, setNextAppointment] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState({});
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -77,18 +78,34 @@ const Page = () => {
       setClients(clientsData);
       
       // Converter clientes para eventos do calendário
-      const clientEvents = [];
+      const clientEvents = {};
       
       clientsData.forEach(client => {
-        // Evento principal (data de criação com horário fixo)
-        const createdDate = client.createdAt ? new Date(client.createdAt) : new Date();
-        createdDate.setHours(12, 0, 0, 0); // Forçar meio-dia para evitar problemas de fuso
+        // Verificar se tem próximo agendamento válido
+        const hasValidAppointment = client.proximoAgendamento && 
+          client.proximoAgendamento !== null && 
+          client.proximoAgendamento !== '' && 
+          client.proximoAgendamento !== 'null' &&
+          client.proximoAgendamento.toString().trim() !== '';
         
-        const mainEvent = {
+        console.log(`Cliente ${client.name}:`, {
+          proximoAgendamento: client.proximoAgendamento,
+          hasValidAppointment,
+          dataRegistro: client.dataRegistro,
+          createdAt: client.createdAt
+        });
+        
+        // SEMPRE criar o evento do cliente na data de registro (verde)
+        // Usar dataRegistro que é a data selecionada no calendário
+        const createdDate = client.dataRegistro 
+          ? dayjs(client.dataRegistro)
+          : dayjs(client.createdAt); // fallback para clientes antigos
+        const createdDateKey = createdDate.format('YYYY-MM-DD');
+        
+        const clientEvent = {
           id: client.id,
           title: client.name,
-          start: createdDate,
-          end: createdDate,
+          date: createdDate,
           desc: client.descricao || 'Cliente cadastrado',
           endereco: client.endereco,
           email: client.email,
@@ -97,23 +114,33 @@ const Page = () => {
           fotoAntes: client.fotoAntes,
           fotoDepois: client.fotoDepois,
           nextAppointment: client.proximoAgendamento,
-          clientData: client
+          clientData: client,
+          type: 'client'
         };
         
-        clientEvents.push(mainEvent);
+        // Adicionar evento do cliente
+        if (!clientEvents[createdDateKey]) {
+          clientEvents[createdDateKey] = [];
+        }
+        clientEvents[createdDateKey].push(clientEvent);
         
-        // Adicionar próximo agendamento se existir
-        if (client.proximoAgendamento) {
-          const appointmentDate = new Date(client.proximoAgendamento);
-          appointmentDate.setHours(12, 0, 0, 0); // Forçar meio-dia
+        // SE tem agendamento válido, criar TAMBÉM o evento de agendamento (azul)
+        if (hasValidAppointment) {
+          const appointmentDate = dayjs(client.proximoAgendamento);
+          const appointmentDateKey = appointmentDate.format('YYYY-MM-DD');
           
           const appointmentEvent = {
-            ...mainEvent,
-            start: appointmentDate,
-            end: appointmentDate,
-            desc: 'Próximo agendamento'
+            ...clientEvent,
+            date: appointmentDate,
+            desc: 'Próximo agendamento',
+            type: 'appointment'
           };
-          clientEvents.push(appointmentEvent);
+          
+          // Adicionar evento de agendamento
+          if (!clientEvents[appointmentDateKey]) {
+            clientEvents[appointmentDateKey] = [];
+          }
+          clientEvents[appointmentDateKey].push(appointmentEvent);
         }
       });
       
@@ -197,26 +224,19 @@ const Page = () => {
   };
 
   useEffect(() => {
-    const hoje = new Date();
-    hoje.setHours(12, 0, 0, 0); // Normalizar horário
+    const hoje = dayjs();
+    const cincoDiasDepois = hoje.add(5, 'day');
+
+    // Verificar eventos em 5 dias
+    const dateKey = cincoDiasDepois.format('YYYY-MM-DD');
+    const eventosEmCincoDias = events[dateKey] || [];
     
-    const cincoDiasDepois = new Date(hoje);
-    cincoDiasDepois.setDate(hoje.getDate() + 5);
+    const agendamentos = eventosEmCincoDias.filter(evento => 
+      evento.type === 'appointment'
+    );
 
-    const eventosEmCincoDias = events.filter((e) => {
-      const dataEvento = new Date(e.start);
-      dataEvento.setHours(12, 0, 0, 0); // Normalizar horário
-      
-      return (
-        dataEvento.getFullYear() === cincoDiasDepois.getFullYear() &&
-        dataEvento.getMonth() === cincoDiasDepois.getMonth() &&
-        dataEvento.getDate() === cincoDiasDepois.getDate() &&
-        e.desc === 'Próximo agendamento'
-      );
-    });
-
-    if (eventosEmCincoDias.length > 0) {
-      eventosEmCincoDias.forEach(async (evento) => {
+    if (agendamentos.length > 0) {
+      agendamentos.forEach(async (evento) => {
         // Mostrar alerta
         alert(`📅 Lembrete: o cliente ${evento.title} tem um agendamento em 5 dias!`);
         
@@ -251,17 +271,17 @@ const Page = () => {
     };
   }, []);
 
-  const handleSelectSlot = ({ start }) => {
-    // Corrigir fuso horário - garantir que a data selecionada seja exata
-    const adjustedDate = new Date(start);
-    adjustedDate.setHours(12, 0, 0, 0); // Forçar meio-dia para evitar problemas de fuso
+  const handleSelectSlot = (date) => {
+    // Converter para dayjs se necessário
+    const selectedDay = dayjs.isDayjs(date) ? date : dayjs(date);
     
-    // Pequeno delay para garantir que o toque seja registrado corretamente no mobile
-    setTimeout(() => {
-      setSelectedDate(adjustedDate);
-      setModalMode('view');
-      setIsModalOpen(true);
-    }, 50);
+    setSelectedDate(selectedDay);
+    
+    // NÃO preencher automaticamente o campo - deixar vazio para o usuário escolher
+    // setNextAppointment(selectedDay.format('YYYY-MM-DD'));
+    
+    setModalMode('view');
+    setIsModalOpen(true);
   };
 
   const formatCPF = (value) => {
@@ -312,18 +332,16 @@ const Page = () => {
     try {
       setLoading(true);
       
-      // Corrigir problema de fuso horário - forçar horário local
-      const adjustedDate = new Date(selectedDate);
-      adjustedDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso
-      
-      // Corrigir o nextAppointment para evitar problema de fuso horário
+      // Só definir nextAppointment se o campo estiver preenchido
       let nextAppointmentFormatted = null;
-      if (nextAppointment) {
-        // Se temos uma data, criar uma nova data em horário local
-        const [year, month, day] = nextAppointment.split('-');
-        const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0, 0);
-        nextAppointmentFormatted = appointmentDate.toISOString();
+      if (nextAppointment && nextAppointment.trim() !== '') {
+        // Usar apenas a data sem conversão para ISO para evitar problemas de fuso horário
+        nextAppointmentFormatted = nextAppointment;
       }
+      // Se nextAppointment estiver vazio, deixar como null (sem agendamento)
+      
+      console.log('Data de agendamento a ser enviada:', nextAppointmentFormatted);
+      console.log('Campo nextAppointment original:', nextAppointment);
       
       // Criar cliente na API
       const response = await clientService.createClient({
@@ -335,7 +353,8 @@ const Page = () => {
         descricao: formData.descricao,
         fotoAntes: formData.fotoAntes,
         fotoDepois: formData.fotoDepois,
-        nextAppointment: nextAppointmentFormatted
+        nextAppointment: nextAppointmentFormatted,
+        dataRegistro: selectedDate ? selectedDate.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0] // ✅ Data selecionada no calendário
       });
 
       console.log('Cliente criado:', response);
@@ -356,6 +375,7 @@ const Page = () => {
         nextAppointment: '',
       });
       setNextAppointment('');
+      setSelectedDate(null); // ✅ Limpar data selecionada
       setModalMode('view');
       setIsModalOpen(false);
       
@@ -424,10 +444,7 @@ const Page = () => {
       // Corrigir o nextAppointment para evitar problema de fuso horário
       let nextAppointmentFormatted = null;
       if (nextAppointment) {
-        // Se temos uma data, criar uma nova data em horário local
-        const [year, month, day] = nextAppointment.split('-');
-        const appointmentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0, 0);
-        nextAppointmentFormatted = appointmentDate.toISOString();
+        nextAppointmentFormatted = dayjs(nextAppointment).toISOString();
       }
       
       // Atualizar cliente na API
@@ -830,19 +847,8 @@ const Page = () => {
     input.click();
   };
 
-  const eventsForSelectedDate = events.filter((e) => {
-    if (!selectedDate) return false;
-    
-    const eventDate = new Date(e.start);
-    const selectedDateOnly = new Date(selectedDate);
-    
-    // Comparar apenas ano, mês e dia (ignorar horário)
-    return (
-      eventDate.getFullYear() === selectedDateOnly.getFullYear() &&
-      eventDate.getMonth() === selectedDateOnly.getMonth() &&
-      eventDate.getDate() === selectedDateOnly.getDate()
-    );
-  });
+  const eventsForSelectedDate = selectedDate ? 
+    (events[dayjs(selectedDate).format('YYYY-MM-DD')] || []) : [];
 
   // Usar diretamente a lista de clientes da API
   const uniqueClients = clients;
@@ -863,8 +869,9 @@ const Page = () => {
   });
 
   return (
-    <ProtectedRoute>
-      <main className={style.mainContainer}>
+    <ConfigProvider locale={ptBR}>
+      <ProtectedRoute>
+        <main className={style.mainContainer}>
         <nav className={style.navContainer}>
           <button
             onClick={() => setView('agenda')}
@@ -893,79 +900,87 @@ const Page = () => {
         </nav>
 
       {view === 'agenda' && (
-        <div
-          className={style.calendarContainer}
-          style={{ position: 'relative' }}
-          onTouchStart={e => {
-            // Detecta se tocou em um dia do calendário
-            const target = e.target;
-            let cell = null;
-            if (target.classList.contains('rbc-day-bg')) {
-              cell = target;
-            } else if (target.classList.contains('rbc-date-cell')) {
-              cell = target.querySelector('button') || target;
-            } else if (target.closest('.rbc-date-cell')) {
-              cell = target.closest('.rbc-date-cell').querySelector('button') || target.closest('.rbc-date-cell');
-            }
-            if (cell) {
-              // Tenta extrair a data do atributo data-date ou aria-label
-              let dateStr = cell.getAttribute('data-date') || cell.getAttribute('aria-label');
-              if (!dateStr && cell.textContent) {
-                // Fallback: tenta construir a data a partir do texto do botão
-                const day = parseInt(cell.textContent);
-                if (!isNaN(day)) {
-                  const current = new Date();
-                  dateStr = new Date(current.getFullYear(), current.getMonth(), day).toISOString();
-                }
-              }
-              if (dateStr) {
-                // Chama handleSelectSlot diretamente
-                handleSelectSlot({ start: new Date(dateStr) });
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }
-          }}
-        >
+        <div className={style.calendarContainer}>
+          {/* Título personalizado */}
+          <div className={style.calendarHeader}>
+            <h2 className={style.calendarTitle}>
+              {currentDate.format('MMMM [de] YYYY')}
+            </h2>
+          </div>
+          
           <Calendar
-            localizer={localizer}
-            selectable
-            events={events}
-            views={['month']}
-            defaultView="month"
-            view="month"
-            date={currentDate}
-            onNavigate={(date) => {
-              console.log('Navegando para:', date);
-              setCurrentDate(date);
+            value={currentDate}
+            onSelect={(date) => handleSelectSlot(date)}
+            mode="month"
+            fullscreen={true}
+            headerRender={({ value, onChange }) => {
+              const year = value.year();
+              const month = value.month();
+              
+              return (
+                <div className={style.customHeader}>
+                  <select 
+                    value={month}
+                    onChange={(e) => {
+                      const newDate = value.clone().month(parseInt(e.target.value));
+                      // Apenas atualizar o estado, sem disparar eventos
+                      setCurrentDate(newDate);
+                    }}
+                    className={style.monthSelector}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {dayjs().month(i).format('MMMM')}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <select 
+                    value={year}
+                    onChange={(e) => {
+                      const newDate = value.clone().year(parseInt(e.target.value));
+                      // Apenas atualizar o estado, sem disparar eventos
+                      setCurrentDate(newDate);
+                    }}
+                    className={style.yearSelector}
+                  >
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const y = year - 5 + i;
+                      return (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              );
             }}
-            startAccessor="start"
-            endAccessor="end"
-            className={style.calendarContainer}
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={(event) => {
-              setSelectedClient(event);
-              setView('agenda');
+            cellRender={(current, info) => {
+              const dateKey = current.format('YYYY-MM-DD');
+              const dayEvents = events[dateKey] || [];
+              
+              if (dayEvents.length === 0) return null;
+              
+              return (
+                <div className={style.calendarEvents}>
+                  {dayEvents.map((event, index) => (
+                    <div 
+                      key={`${event.id}-${index}`}
+                      className={`${style.calendarEvent} ${event.type === 'appointment' ? style.appointmentEvent : style.clientEvent}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedClient(event);
+                      }}
+                    >
+                      {event.title}
+                    </div>
+                  ))}
+                </div>
+              );
             }}
-            culture="pt-BR"
-            messages={{
-              date: 'Data',
-              time: 'Hora',
-              event: 'Evento',
-              allDay: 'Dia inteiro',
-              week: 'Semana',
-              work_week: 'Semana útil',
-              day: 'Dia',
-              month: 'Mês',
-              previous: '❮',
-              next: '❯',
-              yesterday: 'Ontem',
-              tomorrow: 'Amanhã',
-              today: 'Hoje',
-              agenda: 'Agenda',
-              noEventsInRange: 'Nenhum evento neste período.',
-              showMore: (total) => `+ Ver mais (${total})`,
-            }}
+            locale={ptBR}
+            className={style.antCalendar}
           />
         </div>
       )}
@@ -1140,7 +1155,7 @@ const Page = () => {
           <div className={style.mainModal}>
             <h2 className={style.mainModalTitle}>
               {modalMode === 'view'
-                ? `Registros para ${selectedDate?.toLocaleDateString('pt-BR')}`
+                ? `Registros para ${selectedDate ? dayjs(selectedDate).format('DD/MM/YYYY') : ''}`
                 : modalMode === 'edit'
                 ? 'Editar Cliente'
                 : 'Novo Registro'}
@@ -1387,6 +1402,7 @@ const Page = () => {
       )}
       </main>
     </ProtectedRoute>
+    </ConfigProvider>
   );
 };
 

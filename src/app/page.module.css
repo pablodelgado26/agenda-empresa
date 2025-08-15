@@ -76,189 +76,165 @@
   touch-action: pan-x pan-y;
 }
 
-/* Regra geral para todos os elementos clicáveis do calendário */
-.calendarContainer * {
-  -webkit-tap-highlight-color: transparent !important;
+/* Cabeçalho personalizado do calendário */
+.calendarHeader {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px 0;
+  border-bottom: 2px solid #f0f0f0;
 }
 
-.calendarContainer button,
-.calendarContainer [role="button"],
-.calendarContainer .rbc-btn,
-.calendarContainer .rbc-date-cell,
-.calendarContainer .rbc-date-cell *,
-.calendarContainer .rbc-date-cell button,
-.calendarContainer .rbc-date-cell div,
-.calendarContainer .rbc-date-cell span,
-.calendarContainer .rbc-date-cell a,
-.calendarContainer .rbc-event,
-.calendarContainer .rbc-show-more,
-.calendarContainer .rbc-row-content,
-.calendarContainer .rbc-month-view,
-.calendarContainer .rbc-month-row {
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-  cursor: pointer !important;
+.calendarTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0;
+  text-transform: capitalize;
 }
 
-/* Botões de navegação do calendário */
-.calendarContainer .rbc-btn-group button {
-  background: #2563eb !important;
-  color: white !important;
-  border: 1px solid #2563eb !important;
-  padding: 8px 16px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  min-height: 44px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  border-radius: 4px !important;
-  margin: 0 2px !important;
-  
-  /* Melhorar responsividade no mobile */
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
+.customHeader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
 
-.calendarContainer .rbc-btn-group button:hover {
-  background: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
-}
-
-.calendarContainer .rbc-btn-group button:active {
-  background: #1e40af !important;
-  border-color: #1e40af !important;
-}
-
-.calendarContainer .rbc-toolbar {
-  margin-bottom: 15px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  flex-wrap: wrap !important;
-}
-
-.calendarContainer .rbc-toolbar-label {
-  font-size: 18px !important;
-  font-weight: 600 !important;
-  color: #1e40af !important;
-  margin: 0 20px !important;
-}
-
-/* Melhorar células do calendário */
-.calendarContainer .rbc-date-cell {
-  padding: 0 !important;
-  border: 1px solid #e5e7eb;
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-}
-
-.calendarContainer .rbc-date-cell button {
-  width: 100% !important;
-  height: 100% !important;
-  border: none !important;
-  background: none !important;
-  cursor: pointer !important;
-  padding: 12px 8px !important;
-  border-radius: 4px !important;
-  transition: all 0.1s ease !important;
-  min-height: 44px !important;
-  min-width: 44px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  
-  /* Melhorar responsividade no mobile */
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-}
-
-.calendarContainer .rbc-date-cell button:hover {
-  background: rgba(37, 99, 235, 0.1);
-}
-
-.calendarContainer .rbc-today {
-  background-color: rgba(37, 99, 235, 0.1) !important;
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-  cursor: pointer !important;
-}
-
-.calendarContainer .rbc-today button {
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-  cursor: pointer !important;
-}
-
-.calendarContainer .rbc-today *,
-.calendarContainer .rbc-today div,
-.calendarContainer .rbc-today span {
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
-  cursor: pointer !important;
-  pointer-events: none !important;
-}
-
-.calendarContainer .rbc-off-range-bg {
-  background-color: #f9fafb;
-}
-
-/* Eventos no calendário */
-.calendarContainer .rbc-event {
-  background-color: #2563eb;
-  border-radius: 3px;
-  color: white;
-  border: none;
-  padding: 1px 4px;
-  font-size: 10px;
-  line-height: 1.2;
+.monthSelector,
+.yearSelector {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e40af;
   cursor: pointer;
-  min-height: 16px;
-  max-height: 18px;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.monthSelector:hover,
+.yearSelector:hover {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.monthSelector:focus,
+.yearSelector:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Estilos customizados para Ant Design Calendar */
+.antCalendar {
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendarEvents {
+  min-height: 20px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.calendarEvent {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  color: white;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
+  min-height: 12px;
   
   /* Melhorar responsividade no mobile */
-  touch-action: manipulation !important;
-  -webkit-touch-callout: none !important;
-  -webkit-user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-  user-select: none !important;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.calendarContainer .rbc-event:hover {
+.appointmentEvent {
+  background-color: #2563eb;
+}
+
+.appointmentEvent:hover {
   background-color: #1d4ed8;
 }
 
-/* Texto dos eventos no calendário */
-.calendarContainer .rbc-event-content {
-  font-size: inherit;
-  line-height: inherit;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.clientEvent {
+  background-color: #059669;
+}
+
+.clientEvent:hover {
+  background-color: #047857;
+}
+
+/* Estilos globais para o calendário Ant Design */
+.calendarContainer :global(.ant-picker-calendar) {
   width: 100%;
+  background: white;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-panel) {
+  width: 100%;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-date-panel) {
+  width: 100%;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-calendar-header) {
+  margin-bottom: 16px;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-cell) {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-calendar-date) {
+  min-height: 60px;
+  border: 1px solid #f0f0f0;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-calendar-date-content) {
+  min-height: 40px;
+  padding: 4px;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-cell-selected .ant-picker-calendar-date) {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: #2563eb;
+}
+
+.calendarContainer :global(.ant-picker-calendar .ant-picker-cell-today .ant-picker-calendar-date) {
+  border-color: #ff0000;
+  border-width: 2px;
+}
+
+/* Regra geral para todos os elementos clicáveis do calendário */
+.calendarContainer * {
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 /* Media queries para mobile */
@@ -282,6 +258,25 @@
   
   .welcomeText {
     font-size: 12px;
+  }
+  
+  /* Cabeçalho do calendário responsivo */
+  .calendarTitle {
+    font-size: 18px;
+  }
+  
+  .customHeader {
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+  }
+  
+  .monthSelector,
+  .yearSelector {
+    min-width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
   }
   
   .logoutButton {
@@ -442,7 +437,6 @@
   .cameraVideo {
     max-height: 60vh;
   }
-}
 
 /* Clientes */
 .clientsContainer {

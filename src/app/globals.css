@@ -13,23 +13,15 @@ button {
   cursor: pointer;
 }
 
-/* Regras específicas para react-big-calendar */
-.rbc-calendar *,
-.rbc-calendar button,
-.rbc-calendar .rbc-btn,
-.rbc-calendar .rbc-date-cell,
-.rbc-calendar .rbc-date-cell *,
-.rbc-calendar .rbc-date-cell button,
-.rbc-calendar .rbc-date-cell div,
-.rbc-calendar .rbc-date-cell span,
-.rbc-calendar .rbc-today,
-.rbc-calendar .rbc-today *,
-.rbc-calendar .rbc-event,
-.rbc-calendar .rbc-show-more,
-.rbc-calendar .rbc-month-view,
-.rbc-calendar .rbc-month-row,
-.rbc-calendar .rbc-row-content,
-.rbc-calendar [role="button"] {
+/* Regras específicas para Ant Design Calendar */
+.ant-picker-calendar *,
+.ant-picker-calendar button,
+.ant-picker-calendar .ant-picker-calendar-date,
+.ant-picker-calendar .ant-picker-calendar-date-content,
+.ant-picker-calendar .ant-picker-cell,
+.ant-picker-calendar .ant-picker-cell-inner,
+.ant-picker-calendar-date,
+.ant-picker-calendar-full .ant-picker-panel .ant-picker-cell {
   touch-action: manipulation !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
@@ -38,12 +30,19 @@ button {
   cursor: pointer !important;
 }
 
-/* Específico para elementos filhos dos dias - não devem interceptar cliques */
-.rbc-calendar .rbc-date-cell span,
-.rbc-calendar .rbc-date-cell div:not(button),
-.rbc-calendar .rbc-today span,
-.rbc-calendar .rbc-today div:not(button) {
-  pointer-events: none !important;
+/* Estilos customizados para eventos no calendário */
+.ant-picker-calendar-date-content {
+  min-height: 60px;
+  padding: 2px;
+}
+
+.ant-picker-calendar .ant-picker-cell-selected .ant-picker-calendar-date {
+  background: var(--primary);
+  color: white;
+}
+
+.ant-picker-calendar .ant-picker-cell-today .ant-picker-calendar-date {
+  border: 2px solid var(--primary);
 }
 
 :root {
